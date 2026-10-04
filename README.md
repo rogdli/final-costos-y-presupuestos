@@ -1,39 +1,41 @@
-# Costos Rotisería — El Buen Sabor
+# Costos Rotisería
 
-Mini app de gestión de costos para el trabajo integrador de Sistemas de Costos y Presupuestos. Cubre los 10 requerimientos obligatorios de la cátedra usando como caso de validación la Rotisería "El Buen Sabor".
+Mini app para calcular costos, precios y punto de equilibrio de una PyME. Cubre los 10 requerimientos obligatorios de la materia y usa como caso de prueba una rotisería.
 
 ## Cómo correr
 
 ```bash
-npm install
-npm run dev      # http://localhost:5173
-npm test         # motor de cálculo, verificado contra la resolución de cátedra
-npm run build
+pnpm install
+pnpm dev       # http://localhost:5173
+pnpm test      # motor de cálculo, comparado con la resolución de cátedra
+pnpm build
 ```
 
 ## Estructura
 
-El proyecto usa **screaming architecture**: cada carpeta bajo `src/` es una capacidad de negocio, no una capa técnica.
+Cada carpeta de `src/` corresponde a una capacidad del negocio, no a una capa técnica.
 
-| Carpeta | Requerimiento obligatorio |
+| Carpeta | Requerimiento |
 |---|---|
 | `productos/` | Alta de productos |
 | `comprobantes/` | Carga de compras y gastos |
 | `costos-directos/` | Materiales y MOD |
-| `cif/` | Asignación de indirectos (por unidades u horas) |
+| `cif/` | Asignación de indirectos por unidades u horas |
 | `gastos-fijos/` | Administración y venta |
 | `costos-unitarios/` | Costo directo, CIF y costo total unitario |
-| `precios/` | Comparación con competencia, precio mínimo y sugerido |
+| `precios/` | Comparación con la competencia, precio mínimo y sugerido |
 | `punto-equilibrio/` | Margen de contribución, PE en $ y resultado operativo |
-| `alertas/` | Control de cobertura de costos fijos |
-| `simulacion/` | Escenarios (precio, cantidad, costos, utilidad objetivo) |
+| `alertas/` | Cobertura de costos fijos |
+| `simulacion/` | Escenarios de precio, cantidad y utilidad objetivo |
 
-Cada capacidad con lógica de cálculo expone un módulo `*.calc.js` puro junto a su test. `shared/` contiene lo transversal: datos semilla, persistencia y las primitivas de UI del sistema de diseño.
+Las carpetas con cálculos tienen un módulo `*.calc.js` sin React, con su test al lado. `shared/` reúne lo que usan varias carpetas: datos de ejemplo, persistencia y componentes de interfaz.
 
 ## Datos y persistencia
 
-La app arranca con el caso completo de la Rotisería (3 productos, 27 comprobantes) precargado. El estado se autoguarda en `localStorage`. Los botones **Exportar Excel** / **Importar Excel** generan o leen un `.xlsx` con hojas de Productos, Comprobantes y Parámetros.
+La app arranca con el caso de la rotisería cargado: 3 productos y 27 comprobantes. Los cambios se guardan solos en el `localStorage` del navegador.
+
+**Exportar Excel** descarga un `.xlsx` con las hojas Productos, Comprobantes y Parametros. **Importar Excel** lee ese mismo formato.
 
 ## Validación
 
-El motor de cálculo (`*.calc.test.js`, `npm test`) está verificado número por número contra `Resolucion_Practico_Costos_Rotiseria.xlsx`, la resolución de cátedra del práctico.
+Los tests (`*.calc.test.js`, `pnpm test`) comparan cada resultado del motor de cálculo con la resolución de cátedra, `Resolucion_Practico_Costos_Rotiseria.xlsx`.

@@ -17,7 +17,7 @@ Una mini app web (React + Vite) que, a partir de los comprobantes de compras y g
 
 No tiene backend. Los datos se guardan automáticamente en el navegador (`localStorage`) y se pueden **exportar e importar como Excel** (`.xlsx`).
 
-El caso de prueba que trae cargado es la **Rotisería "El Buen Sabor"**, y sus resultados coinciden número por número con la resolución de cátedra (`Resolucion_Practico_Costos_Rotiseria.xlsx`). Esa coincidencia está verificada en los tests (`npm test`).
+El caso de prueba que trae cargado es la **Rotisería**, y sus resultados coinciden número por número con la resolución de cátedra (`Resolucion_Practico_Costos_Rotiseria.xlsx`). Esa coincidencia está verificada en los tests (`pnpm test`).
 
 ---
 
@@ -213,11 +213,11 @@ Regla: los archivos `*.calc.js` son funciones puras, sin React. Se testean en ai
 Comandos:
 
 ```bash
-npm install
-npm run dev      # http://localhost:5173
-npm test         # 16 tests del motor de cálculo
-npm run build
-npm run lint
+pnpm install
+pnpm dev         # http://localhost:5173
+pnpm test        # 16 tests del motor de cálculo
+pnpm build
+pnpm lint
 ```
 
 ---
