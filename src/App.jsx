@@ -11,11 +11,13 @@ import {
   SlidersHorizontal,
   Download,
   Upload,
+  TriangleAlert,
 } from 'lucide-react'
 import './App.css'
 import { seedProductos, seedComprobantes, seedUtilidadObjetivo } from './shared/seedData'
 import { cargarEstado, guardarEstado, exportarExcel, importarExcel } from './shared/storage'
 import { calcularCasoCompleto, simular } from './simulacion/simulacion.calc'
+import { calcularDesgloseFijos } from './gastos-fijos/gastosFijos.calc'
 import { METODO_CIF } from './cif/cif.calc'
 import Button from './shared/ui/Button'
 import CoberturaBadge from './alertas/CoberturaBadge'
@@ -47,25 +49,25 @@ const SECCIONES = [
     id: 'costos-directos',
     label: 'Costos directos',
     Icon: Hammer,
-    descripcion: 'Materiales directos y mano de obra asignada por hora de producción.',
+    descripcion: 'Comprobantes imputados a un producto: materiales y mano de obra directa.',
   },
   {
     id: 'cif',
-    label: 'CIF',
+    label: 'Indirectos',
     Icon: Factory,
-    descripcion: 'Asignación de costos indirectos de fabricación entre productos.',
+    descripcion: 'Pool de costos indirectos repartido entre productos por unidades vendidas u horas de producción.',
   },
   {
     id: 'gastos-fijos',
-    label: 'Gastos fijos',
+    label: 'Costos fijos',
     Icon: Building2,
-    descripcion: 'Gastos fijos de administración y ventas del período.',
+    descripcion: 'Gastos de administración y ventas, y total de costos fijos de la empresa.',
   },
   {
     id: 'costos-unitarios',
     label: 'Costos unitarios',
     Icon: Calculator,
-    descripcion: 'Costo directo, CIF y costo total unitario por producto.',
+    descripcion: 'Costo directo, indirecto, total y variable unitario por producto.',
   },
   {
     id: 'precios',
@@ -83,20 +85,21 @@ const SECCIONES = [
     id: 'simulacion',
     label: 'Simulador',
     Icon: SlidersHorizontal,
-    descripcion: 'Escenarios: modificá precios, cantidades y utilidad objetivo sin alterar los datos base.',
+    descripcion: 'Escenarios: precios, cantidades, costos y utilidad objetivo, sin alterar los datos base.',
   },
 ]
 
-const ESTADO_INICIAL = { precios: {}, cantidades: {} }
+const ESTADO_INICIAL = { precios: {}, cantidades: {}, ajusteVariables: 0, ajusteFijos: 0 }
 const estadoGuardado = cargarEstado()
 
 export default function App() {
   const [productos, setProductos] = useState(estadoGuardado?.productos ?? seedProductos)
   const [comprobantes, setComprobantes] = useState(estadoGuardado?.comprobantes ?? seedComprobantes)
-  const [metodoCif, setMetodoCif] = useState(estadoGuardado?.metodoCif ?? METODO_CIF.UNIDADES)
+  const [metodoCif, setMetodoCif] = useState(estadoGuardado?.metodoCif ?? METODO_CIF.HORAS)
   const [utilidadObjetivo, setUtilidadObjetivo] = useState(estadoGuardado?.utilidadObjetivo ?? seedUtilidadObjetivo)
-  const [overrides, setOverrides] = useState(estadoGuardado?.overrides ?? ESTADO_INICIAL)
+  const [overrides, setOverrides] = useState({ ...ESTADO_INICIAL, ...estadoGuardado?.overrides })
   const [seccion, setSeccion] = useState(SECCIONES[0].id)
+  const [errorImportacion, setErrorImportacion] = useState('')
 
   useEffect(() => {
     guardarEstado({ productos, comprobantes, metodoCif, utilidadObjetivo, overrides })
@@ -112,6 +115,8 @@ export default function App() {
     [productos, comprobantes, overrides, metodoCif, utilidadObjetivo]
   )
 
+  const desgloseFijos = useMemo(() => calcularDesgloseFijos(comprobantes), [comprobantes])
+
   function setOverride(campo, productoId, valor) {
     setOverrides((prev) => {
       const siguiente = { ...prev[campo] }
@@ -124,16 +129,38 @@ export default function App() {
     })
   }
 
+  /**
+   * Al eliminar un producto sus comprobantes directos pasan a General, para que
+   * su importe siga entrando al cálculo como indirecto en vez de perderse.
+   */
+  function eliminarProducto(id) {
+    setProductos((prev) => prev.filter((p) => p.id !== id))
+    setComprobantes((prev) => prev.map((c) => (c.productoId === id ? { ...c, productoId: null } : c)))
+    setOverrides((prev) => {
+      const precios = { ...prev.precios }
+      const cantidades = { ...prev.cantidades }
+      delete precios[id]
+      delete cantidades[id]
+      return { ...prev, precios, cantidades }
+    })
+  }
+
   async function handleImportar(e) {
     const file = e.target.files?.[0]
-    if (!file) return
-    const data = await importarExcel(file)
-    setProductos(data.productos ?? seedProductos)
-    setComprobantes(data.comprobantes ?? seedComprobantes)
-    setMetodoCif(data.metodoCif ?? METODO_CIF.UNIDADES)
-    setUtilidadObjetivo(data.utilidadObjetivo ?? seedUtilidadObjetivo)
-    setOverrides(ESTADO_INICIAL)
     e.target.value = ''
+    if (!file) return
+
+    try {
+      const data = await importarExcel(file)
+      setProductos(data.productos)
+      setComprobantes(data.comprobantes)
+      setMetodoCif(data.metodoCif ?? METODO_CIF.HORAS)
+      setUtilidadObjetivo(data.utilidadObjetivo ?? seedUtilidadObjetivo)
+      setOverrides(ESTADO_INICIAL)
+      setErrorImportacion('')
+    } catch (error) {
+      setErrorImportacion(error.message)
+    }
   }
 
   const activa = SECCIONES.find((s) => s.id === seccion)
@@ -186,12 +213,23 @@ export default function App() {
           </div>
         </header>
 
+        {errorImportacion && (
+          <div className="ui-alert ui-alert--warn app-import-error">
+            <TriangleAlert size={16} strokeWidth={1.5} />
+            <span>{errorImportacion}</span>
+            <Button variant="ghost" onClick={() => setErrorImportacion('')}>
+              Cerrar
+            </Button>
+          </div>
+        )}
+
         <main className="app-content" key={seccion}>
           {seccion === 'productos' && (
             <ProductosForm
               productos={productos}
+              comprobantes={comprobantes}
               onAgregar={(p) => setProductos([...productos, p])}
-              onEliminar={(id) => setProductos(productos.filter((p) => p.id !== id))}
+              onEliminar={eliminarProducto}
             />
           )}
 
@@ -199,6 +237,7 @@ export default function App() {
             <ComprobantesForm
               comprobantes={comprobantes}
               productos={productos}
+              control={casoBase.control}
               onAgregar={(c) => setComprobantes([...comprobantes, c])}
               onEliminar={(numero) => setComprobantes(comprobantes.filter((c) => c.numero !== numero))}
             />
@@ -209,24 +248,46 @@ export default function App() {
           )}
 
           {seccion === 'cif' && (
-            <Cif productos={productos} cif={casoBase.cif} metodoCif={metodoCif} onCambiarMetodo={setMetodoCif} />
+            <Cif
+              productos={productos}
+              cif={casoBase.cif}
+              control={casoBase.control}
+              metodoCif={metodoCif}
+              onCambiarMetodo={setMetodoCif}
+            />
           )}
 
-          {seccion === 'gastos-fijos' && <GastosFijos comprobantes={comprobantes} total={casoBase.gastosFijosTotales} />}
+          {seccion === 'gastos-fijos' && (
+            <GastosFijos
+              comprobantes={comprobantes}
+              gastosAdministracion={casoBase.gastosFijosTotales}
+              costosFijosTotales={casoBase.costosFijosTotales}
+              desglose={desgloseFijos}
+            />
+          )}
 
           {seccion === 'costos-unitarios' && (
             <CostosUnitarios productos={productos} costosUnitarios={casoBase.costosUnitarios} />
           )}
 
           {seccion === 'precios' && (
-            <Precios productos={productos} margen={casoBase.margen} preciosSugeridos={casoBase.preciosSugeridos} />
+            <Precios
+              productos={productos}
+              margen={casoBase.margen}
+              preciosSugeridos={casoBase.preciosSugeridos}
+              utilidadObjetivo={utilidadObjetivo}
+            />
           )}
 
           {seccion === 'punto-equilibrio' && (
             <PuntoEquilibrio
+              productos={productos}
               costosFijosTotales={casoBase.costosFijosTotales}
+              ingresosTotales={casoBase.ingresosTotales}
+              costoVariableTotal={casoBase.costoVariableTotal}
               margen={casoBase.margen}
               puntoEquilibrio={casoBase.puntoEquilibrio}
+              pePorProducto={casoBase.pePorProducto}
             />
           )}
 
@@ -237,8 +298,10 @@ export default function App() {
               utilidadObjetivo={utilidadObjetivo}
               onCambiarPrecio={(id, valor) => setOverride('precios', id, valor)}
               onCambiarCantidad={(id, valor) => setOverride('cantidades', id, valor)}
+              onCambiarAjuste={(campo, valor) => setOverrides((prev) => ({ ...prev, [campo]: Number(valor) || 0 }))}
               onCambiarUtilidadObjetivo={(valor) => setUtilidadObjetivo(Number(valor) || 0)}
               onRestablecer={() => setOverrides(ESTADO_INICIAL)}
+              casoBase={casoBase}
               casoSimulado={casoSimulado}
             />
           )}

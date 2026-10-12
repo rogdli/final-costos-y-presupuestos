@@ -517,3 +517,53 @@
   border: 1px solid var(--color-terracotta);
   color: var(--color-terracotta);
 }
+
+/* Nota explicativa dentro de una tarjeta */
+
+.ui-hint {
+  font-size: var(--text-body-sm);
+  color: var(--color-bark);
+  line-height: 1.5;
+  margin: var(--spacing-12) 0 0;
+  max-width: 76ch;
+}
+
+/* Fila de métricas secundaria (debajo de otra) */
+
+.ui-metric-row--spaced {
+  margin-top: var(--spacing-16);
+}
+
+/* Diferencia contra el caso base, en el simulador */
+
+.ui-delta {
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.ui-delta--ok {
+  color: var(--color-espresso);
+}
+
+.ui-delta--warn {
+  color: var(--color-terracotta);
+}
+
+/* Error de importación de Excel */
+
+.app-import-error {
+  margin-bottom: var(--spacing-24);
+  justify-content: space-between;
+}
+
+/* Pie de tabla con totales */
+
+.ui-table tfoot th {
+  color: var(--color-espresso);
+  font-weight: var(--font-weight-semibold);
+  text-transform: none;
+  letter-spacing: var(--tracking-body-sm);
+  font-size: var(--text-body-sm);
+  border-bottom: none;
+  border-top: 1px solid var(--color-linen-border);
+}
