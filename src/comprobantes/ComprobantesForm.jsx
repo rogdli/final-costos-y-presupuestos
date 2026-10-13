@@ -59,7 +59,13 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
       setErrores((prev) => ({ ...prev, importe: 'No puede ser negativo.' }))
       return
     }
-    setForm((prev) => ({ ...prev, [campo]: valor }))
+    setForm((prev) => ({
+      ...prev,
+      [campo]: valor,
+      ...(campo === 'tipoFuncional' && ![TIPO.COSTO_DIRECTO, TIPO.MANO_OBRA_DIRECTA].includes(valor)
+        ? { productoId: '' }
+        : {}),
+    }))
     setErrores((prev) => ({
       ...prev,
       [campo]: undefined,
@@ -169,13 +175,14 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
             <select
               value={form.productoId}
               aria-label="Producto asociado"
+              disabled={!tipoRequiereProducto}
               required={tipoRequiereProducto}
               aria-invalid={Boolean(errores.productoId)}
               aria-describedby={errores.productoId ? 'comprobante-producto-error' : undefined}
               onChange={(e) => cambiarCampo('productoId', e.target.value)}
             >
               <option value="">General</option>
-              {productos.map((p) => (
+              {tipoRequiereProducto && productos.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}
                 </option>
