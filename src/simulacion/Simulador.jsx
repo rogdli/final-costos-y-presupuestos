@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import Card from '../shared/ui/Card'
 import Table from '../shared/ui/Table'
@@ -8,6 +9,7 @@ import Divider from '../shared/ui/Divider'
 import SectionHeading from '../shared/ui/SectionHeading'
 import AlertaCobertura from '../alertas/AlertaCobertura'
 import { formatMoney, formatNumber, formatPercent } from '../shared/format'
+import { numeroNoNegativo } from '../shared/numeros'
 
 /** Diferencia contra el caso base, para leer el efecto de cada cambio. */
 function Delta({ base, simulado, mejorSiBaja = false }) {
@@ -27,11 +29,96 @@ function Delta({ base, simulado, mejorSiBaja = false }) {
   )
 }
 
+function PrecioSimuladoControl({ producto, precioIngresado, onCambiarPrecio }) {
+  const precioBase = Math.max(0, Number(producto.precioCompetencia) || 0)
+  const precioSimulado = precioIngresado ?? precioBase
+  const [precioMaximo, setPrecioMaximo] = useState(() =>
+    Math.max(precioBase * 2, precioSimulado, precioBase > 0 ? 1 : 1000)
+  )
+  const [error, setError] = useState('')
+
+  function cambiarPrecioExacto(valor) {
+    if (valor === '') {
+      setError('')
+      onCambiarPrecio(producto.id, '')
+      return
+    }
+
+    const precio = numeroNoNegativo(valor)
+    if (precio === null) {
+      setError('El precio debe ser 0 o mayor.')
+      return
+    }
+    setError('')
+    setPrecioMaximo((maximo) => Math.max(maximo, precio))
+    onCambiarPrecio(producto.id, precio)
+  }
+
+  return (
+    <div className="ui-price-control">
+      <input
+        type="number"
+        min="0"
+        step="any"
+        aria-label={`Precio simulado de ${producto.nombre}`}
+        aria-invalid={Boolean(error)}
+        placeholder={producto.precioCompetencia}
+        value={precioIngresado ?? ''}
+        onChange={(e) => cambiarPrecioExacto(e.target.value)}
+      />
+      {error && <span className="ui-field__error" role="alert">{error}</span>}
+      <input
+        type="range"
+        min="0"
+        max={precioMaximo}
+        step="1"
+        aria-label={`Ajustar precio simulado de ${producto.nombre}`}
+        value={precioSimulado}
+        onChange={(e) => onCambiarPrecio(producto.id, e.target.value)}
+      />
+      <div className="ui-price-control__limits" aria-hidden="true">
+        <span>$0</span>
+        <span>{formatMoney(precioMaximo)}</span>
+      </div>
+    </div>
+  )
+}
+
+function CantidadSimuladaControl({ producto, cantidadIngresada, onCambiarCantidad }) {
+  const [error, setError] = useState('')
+
+  function cambiarCantidad(valor) {
+    if (valor !== '' && numeroNoNegativo(valor, { entero: true }) === null) {
+      setError('Usá una cantidad entera de 0 o más.')
+      return
+    }
+    setError('')
+    onCambiarCantidad(producto.id, valor)
+  }
+
+  return (
+    <div className="ui-simulated-number">
+      <input
+        type="number"
+        min="0"
+        step="1"
+        aria-label={`Cantidad simulada de ${producto.nombre}`}
+        aria-invalid={Boolean(error)}
+        placeholder={producto.cantidadVendida}
+        value={cantidadIngresada ?? ''}
+        onChange={(e) => cambiarCantidad(e.target.value)}
+      />
+      {error && <span className="ui-field__error" role="alert">{error}</span>}
+    </div>
+  )
+}
+
 export default function Simulador({
   productos,
   overrides,
   utilidadObjetivo,
   onCambiarPrecio,
+  onCambiarPreciosGlobal,
   onCambiarCantidad,
   onCambiarAjuste,
   onCambiarUtilidadObjetivo,
@@ -41,6 +128,16 @@ export default function Simulador({
 }) {
   const base = casoBase.puntoEquilibrio
   const sim = casoSimulado.puntoEquilibrio
+  const [errorUtilidad, setErrorUtilidad] = useState('')
+
+  function cambiarUtilidad(valor) {
+    if (valor !== '' && numeroNoNegativo(valor) === null) {
+      setErrorUtilidad('La utilidad objetivo debe ser 0 o mayor.')
+      return
+    }
+    setErrorUtilidad('')
+    onCambiarUtilidadObjetivo(valor)
+  }
 
   return (
     <>
@@ -84,6 +181,39 @@ export default function Simulador({
       </Card>
 
       <Card title="Variables del escenario">
+        <SectionHeading>Precio global</SectionHeading>
+        <div className="ui-global-price">
+          <div className="ui-global-price__heading">
+            <label htmlFor="precio-global">Mismo ajuste para todos los productos</label>
+            <strong>
+              {overrides.porcentajePrecioGlobal === null
+                ? 'Precios ajustados individualmente'
+                : `${overrides.porcentajePrecioGlobal}% del precio base`}
+            </strong>
+          </div>
+          <input
+            id="precio-global"
+            type="range"
+            min="0"
+            max="200"
+            step="1"
+            value={overrides.porcentajePrecioGlobal ?? 100}
+            onChange={(e) => onCambiarPreciosGlobal(e.target.value)}
+            disabled={productos.length === 0}
+          />
+          <div className="ui-price-control__limits" aria-hidden="true">
+            <span>0%</span>
+            <span>100% (base)</span>
+            <span>200%</span>
+          </div>
+        </div>
+        <p className="ui-hint">
+          Mové la barra para subir o bajar todos los precios en la misma proporción respecto del precio base. Por
+          ejemplo, 110% aumenta cada precio un 10%. Después podés ajustar un producto por separado abajo; al volver a
+          mover la barra global se aplica el porcentaje a todos otra vez.
+        </p>
+
+        <Divider />
         <SectionHeading>Precio y cantidad por producto</SectionHeading>
 
         <Table>
@@ -103,20 +233,18 @@ export default function Simulador({
                 <td>{producto.nombre}</td>
                 <td>{formatMoney(producto.precioCompetencia)}</td>
                 <td>
-                  <input
-                    type="number"
-                    placeholder={producto.precioCompetencia}
-                    value={overrides.precios[producto.id] ?? ''}
-                    onChange={(e) => onCambiarPrecio(producto.id, e.target.value)}
+                  <PrecioSimuladoControl
+                    producto={producto}
+                    precioIngresado={overrides.precios[producto.id]}
+                    onCambiarPrecio={onCambiarPrecio}
                   />
                 </td>
                 <td>{formatNumber(producto.cantidadVendida)}</td>
                 <td>
-                  <input
-                    type="number"
-                    placeholder={producto.cantidadVendida}
-                    value={overrides.cantidades[producto.id] ?? ''}
-                    onChange={(e) => onCambiarCantidad(producto.id, e.target.value)}
+                  <CantidadSimuladaControl
+                    producto={producto}
+                    cantidadIngresada={overrides.cantidades[producto.id]}
+                    onCambiarCantidad={onCambiarCantidad}
                   />
                 </td>
                 <td>{formatMoney(casoSimulado.preciosSugeridos.porProducto[i].precioSugerido)}</td>
@@ -125,32 +253,56 @@ export default function Simulador({
           </tbody>
         </Table>
 
+        <p className="ui-hint">
+          Arrastrá la barra para probar otro precio por producto. Arranca en $0 y normalmente llega al doble del precio
+          base. Si escribís un valor mayor, el tope se amplía. El escenario se actualiza al instante.
+        </p>
+
         <Divider />
         <SectionHeading>Costos y utilidad</SectionHeading>
 
         <div className="ui-form-grid">
-          <Field label="Ajuste de costos variables (%)">
+          <Field label="Costos variables (% del valor base)">
             <input
-              type="number"
-              value={overrides.ajusteVariables ?? 0}
+              type="range"
+              className="ui-cost-range"
+              min="0"
+              max="200"
+              step="1"
+              value={100 + (overrides.ajusteVariables ?? 0)}
               onChange={(e) => onCambiarAjuste('ajusteVariables', e.target.value)}
             />
+            <span className="ui-cost-range__value">{100 + (overrides.ajusteVariables ?? 0)}% (100% = actual)</span>
           </Field>
-          <Field label="Ajuste de costos fijos (%)">
+          <Field label="Costos fijos (% del valor base)">
             <input
-              type="number"
-              value={overrides.ajusteFijos ?? 0}
+              type="range"
+              className="ui-cost-range"
+              min="0"
+              max="200"
+              step="1"
+              value={100 + (overrides.ajusteFijos ?? 0)}
               onChange={(e) => onCambiarAjuste('ajusteFijos', e.target.value)}
             />
+            <span className="ui-cost-range__value">{100 + (overrides.ajusteFijos ?? 0)}% (100% = actual)</span>
           </Field>
           <Field label="Utilidad mensual objetivo">
-            <input type="number" value={utilidadObjetivo} onChange={(e) => onCambiarUtilidadObjetivo(e.target.value)} />
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={utilidadObjetivo === 0 ? '' : utilidadObjetivo}
+              placeholder="0"
+              aria-invalid={Boolean(errorUtilidad)}
+              onChange={(e) => cambiarUtilidad(e.target.value)}
+            />
+            {errorUtilidad && <span className="ui-field__error" role="alert">{errorUtilidad}</span>}
           </Field>
         </div>
 
         <p className="ui-hint">
-          Los ajustes de costos se aplican sobre los importes de los comprobantes según su comportamiento: un 10 en
-          costos fijos simula una estructura fija 10% más cara. Al cambiar cantidades, los costos variables asociados
+          En las barras de costos, 100% deja el valor actual, 90% lo baja un 10% y 110% lo sube un 10%. Al cambiar
+          cantidades, los costos variables asociados
           a productos acompañan ese volumen; los variables generales se ajustan con el driver elegido. Si el driver son
           horas, se estiman según las horas por unidad del caso base. Los datos base no se modifican.
         </p>

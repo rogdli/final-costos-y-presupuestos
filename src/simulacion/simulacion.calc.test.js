@@ -78,4 +78,17 @@ describe('simular', () => {
     expect(seedProductos[0].precioCompetencia).toBe(precioOriginal)
     expect(seedComprobantes[0].importe).toBe(importeOriginal)
   })
+
+  it('ignora precios y cantidades negativos y no deja que una baja de costos pase de cero', () => {
+    const base = calcularCasoCompleto(seedProductos, seedComprobantes)
+    const simulado = simular(seedProductos, seedComprobantes, {
+      precios: { [seedProductos[0].id]: -100 },
+      cantidades: { [seedProductos[0].id]: -5 },
+      ajusteVariables: -200,
+    })
+
+    expect(simulado.ingresosTotales).toBe(base.ingresosTotales)
+    expect(simulado.costoVariableTotal).toBe(0)
+    expect(simulado.costosFijosTotales).toBe(base.costosFijosTotales)
+  })
 })

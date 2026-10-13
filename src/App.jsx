@@ -19,6 +19,8 @@ import { cargarEstado, guardarEstado, exportarExcel, importarExcel } from './sha
 import { calcularCasoCompleto, simular } from './simulacion/simulacion.calc'
 import { calcularDesgloseFijos } from './gastos-fijos/gastosFijos.calc'
 import { METODO_CIF } from './cif/cif.calc'
+import { numeroNoNegativo } from './shared/numeros'
+import { TIPO } from './shared/comprobantes'
 import Button from './shared/ui/Button'
 import CoberturaBadge from './alertas/CoberturaBadge'
 
@@ -89,17 +91,23 @@ const SECCIONES = [
   },
 ]
 
-const ESTADO_INICIAL = { precios: {}, cantidades: {}, ajusteVariables: 0, ajusteFijos: 0 }
+const ESTADO_INICIAL = { precios: {}, cantidades: {}, ajusteVariables: 0, ajusteFijos: 0, porcentajePrecioGlobal: 100 }
 const estadoGuardado = cargarEstado()
+const overridesGuardados = estadoGuardado?.overrides
 
 export default function App() {
   const [productos, setProductos] = useState(estadoGuardado?.productos ?? seedProductos)
   const [comprobantes, setComprobantes] = useState(estadoGuardado?.comprobantes ?? seedComprobantes)
   const [metodoCif, setMetodoCif] = useState(estadoGuardado?.metodoCif ?? METODO_CIF.HORAS)
   const [utilidadObjetivo, setUtilidadObjetivo] = useState(estadoGuardado?.utilidadObjetivo ?? seedUtilidadObjetivo)
-  const [overrides, setOverrides] = useState({ ...ESTADO_INICIAL, ...estadoGuardado?.overrides })
+  const [overrides, setOverrides] = useState({
+    ...ESTADO_INICIAL,
+    ...overridesGuardados,
+    porcentajePrecioGlobal: overridesGuardados?.porcentajePrecioGlobal ??
+      (Object.keys(overridesGuardados?.precios ?? {}).length > 0 ? null : 100),
+  })
   const [seccion, setSeccion] = useState(SECCIONES[0].id)
-  const [errorImportacion, setErrorImportacion] = useState('')
+  const [errorImportacion, setErrorImportacion] = useState(estadoGuardado?.avisoDatosCorregidos ?? '')
 
   useEffect(() => {
     guardarEstado({ productos, comprobantes, metodoCif, utilidadObjetivo, overrides })
@@ -118,24 +126,52 @@ export default function App() {
   const desgloseFijos = useMemo(() => calcularDesgloseFijos(comprobantes), [comprobantes])
 
   function setOverride(campo, productoId, valor) {
+    const numero = valor === '' ? null : numeroNoNegativo(valor, { entero: campo === 'cantidades' })
+    if (valor !== '' && numero === null) return
+
     setOverrides((prev) => {
       const siguiente = { ...prev[campo] }
       if (valor === '') {
         delete siguiente[productoId]
       } else {
-        siguiente[productoId] = Number(valor)
+        siguiente[productoId] = numero
       }
-      return { ...prev, [campo]: siguiente }
+      return {
+        ...prev,
+        [campo]: siguiente,
+        ...(campo === 'precios' ? { porcentajePrecioGlobal: null } : {}),
+      }
     })
   }
 
-  /**
-   * Al eliminar un producto sus comprobantes directos pasan a General, para que
-   * su importe siga entrando al cálculo como indirecto en vez de perderse.
-   */
+  function cambiarPreciosGlobal(porcentaje) {
+    const valor = Math.max(0, Math.min(200, Number(porcentaje)))
+    if (!Number.isFinite(valor)) return
+
+    setOverrides((prev) => ({
+      ...prev,
+      porcentajePrecioGlobal: valor,
+      precios: valor === 100
+        ? {}
+        : Object.fromEntries(
+            productos.map((producto) => [
+              producto.id,
+              Math.round(Math.max(0, Number(producto.precioCompetencia) || 0) * valor) / 100,
+            ])
+          ),
+    }))
+  }
+
+  /** Al eliminar un producto, sus importes se conservan como costos generales. */
   function eliminarProducto(id) {
     setProductos((prev) => prev.filter((p) => p.id !== id))
-    setComprobantes((prev) => prev.map((c) => (c.productoId === id ? { ...c, productoId: null } : c)))
+    setComprobantes((prev) => prev.map((c) => {
+      if (c.productoId !== id) return c
+      const tipoFuncional = c.tipoFuncional === TIPO.MANO_OBRA_DIRECTA
+        ? TIPO.MANO_OBRA_INDIRECTA
+        : c.tipoFuncional === TIPO.COSTO_DIRECTO ? TIPO.CIF : c.tipoFuncional
+      return { ...c, productoId: null, tipoFuncional }
+    }))
     setOverrides((prev) => {
       const precios = { ...prev.precios }
       const cantidades = { ...prev.cantidades }
@@ -297,9 +333,19 @@ export default function App() {
               overrides={overrides}
               utilidadObjetivo={utilidadObjetivo}
               onCambiarPrecio={(id, valor) => setOverride('precios', id, valor)}
+              onCambiarPreciosGlobal={cambiarPreciosGlobal}
               onCambiarCantidad={(id, valor) => setOverride('cantidades', id, valor)}
-              onCambiarAjuste={(campo, valor) => setOverrides((prev) => ({ ...prev, [campo]: Number(valor) || 0 }))}
-              onCambiarUtilidadObjetivo={(valor) => setUtilidadObjetivo(Number(valor) || 0)}
+              onCambiarAjuste={(campo, porcentaje) => {
+                const valor = numeroNoNegativo(porcentaje)
+                if (valor !== null && valor <= 200) setOverrides((prev) => ({ ...prev, [campo]: valor - 100 }))
+              }}
+              onCambiarUtilidadObjetivo={(valor) => {
+                if (valor === '') setUtilidadObjetivo(0)
+                else {
+                  const numero = numeroNoNegativo(valor)
+                  if (numero !== null) setUtilidadObjetivo(numero)
+                }
+              }}
               onRestablecer={() => setOverrides(ESTADO_INICIAL)}
               casoBase={casoBase}
               casoSimulado={casoSimulado}

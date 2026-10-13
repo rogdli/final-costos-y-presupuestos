@@ -1,4 +1,5 @@
 import { esFijo, sumarComprobantes } from '../shared/comprobantes'
+import { numeroNoNegativo } from '../shared/numeros'
 import { calcularCostoDirecto } from '../costos-directos/costosDirectos.calc'
 import { calcularCif, METODO_CIF } from '../cif/cif.calc'
 import { calcularCostoTotalUnitario } from '../costos-unitarios/costosUnitarios.calc'
@@ -83,7 +84,8 @@ function ajustarComprobantes(comprobantes, ajusteVariables, ajusteFijos) {
   if (!ajusteVariables && !ajusteFijos) return comprobantes
 
   return comprobantes.map((comprobante) => {
-    const ajuste = esFijo(comprobante) ? ajusteFijos : ajusteVariables
+    const ajusteIngresado = Number(esFijo(comprobante) ? ajusteFijos : ajusteVariables)
+    const ajuste = Number.isFinite(ajusteIngresado) ? Math.max(-100, ajusteIngresado) : 0
     if (!ajuste) return comprobante
     return { ...comprobante, importe: (Number(comprobante.importe) || 0) * (1 + ajuste / 100) }
   })
@@ -153,12 +155,15 @@ export function simular(productosBase, comprobantes, overrides = {}) {
 
   const productosSimulados = productosBase.map((producto) => ({
     ...producto,
-    precioCompetencia: precios[producto.id] ?? producto.precioCompetencia,
-    cantidadVendida: cantidades[producto.id] ?? producto.cantidadVendida,
+    precioCompetencia: numeroNoNegativo(precios[producto.id]) ?? producto.precioCompetencia,
+    cantidadVendida: numeroNoNegativo(cantidades[producto.id], { entero: true }) ?? producto.cantidadVendida,
   }))
 
   const comprobantesSimulados = ajustarComprobantes(comprobantes, ajusteVariables, ajusteFijos)
   const escenario = escalarVariablesPorVolumen(productosBase, productosSimulados, comprobantesSimulados, metodoCif)
 
-  return calcularCasoCompleto(escenario.productos, escenario.comprobantes, { metodoCif, utilidadObjetivo })
+  return calcularCasoCompleto(escenario.productos, escenario.comprobantes, {
+    metodoCif,
+    utilidadObjetivo: numeroNoNegativo(utilidadObjetivo) ?? 0,
+  })
 }
