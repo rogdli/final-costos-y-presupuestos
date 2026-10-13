@@ -4,7 +4,7 @@ import { formatMoney } from '../shared/format'
 
 export default function CostosUnitarios({ productos, costosUnitarios }) {
   return (
-    <Card info="Costeo por absorción: cada producto carga su costo directo más la parte del pool indirecto que le asignó el driver. La columna de costo variable unitario es la que se usa para el margen de contribución y el punto de equilibrio, y solo incluye lo cargado como Variable.">
+    <Card info="Total unitario = directo unitario + indirecto unitario. Variable unitario = directo variable unitario + indirecto variable unitario.">
 
       <Table>
         <thead>

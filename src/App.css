@@ -439,6 +439,11 @@
   pointer-events: none;
 }
 
+.ui-infotip--derecha .ui-infotip__bubble {
+  left: auto;
+  right: 0;
+}
+
 .ui-infotip:hover .ui-infotip__bubble,
 .ui-infotip:focus-within .ui-infotip__bubble,
 .ui-infotip--abierto .ui-infotip__bubble {
@@ -887,9 +892,17 @@
 }
 
 .ui-metric-tile__label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
   margin: 0 0 var(--spacing-4);
   font-size: var(--text-caption);
   color: var(--color-driftwood);
+}
+
+.ui-metric-tile__label .ui-infotip__trigger {
+  width: 20px;
+  height: 20px;
 }
 
 .ui-metric-tile__value {

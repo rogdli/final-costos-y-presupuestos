@@ -9,12 +9,11 @@ export default function CostosDirectos({ productos, costoDirecto }) {
     <Card
       info={
         <>
-          Son los comprobantes que tienen un producto asociado: se imputan enteros a ese producto, sin reparto.
+          Costo directo = suma de comprobantes asociados al producto.
           {costoDirecto.manoObraGeneral > 0 && (
             <>
               {' '}
-              La mano de obra cargada como General ({formatMoney(costoDirecto.manoObraGeneral)}) no aparece acá: va al
-              pool indirecto y se reparte por el driver.
+              Mano de obra General ({formatMoney(costoDirecto.manoObraGeneral)}) va a Indirectos.
             </>
           )}
         </>
@@ -23,7 +22,11 @@ export default function CostosDirectos({ productos, costoDirecto }) {
       <div className="ui-metric-row">
         <MetricTile label="Materiales directos" value={formatMoney(costoDirecto.materialesDirectos)} />
         <MetricTile label="Mano de obra directa asignada" value={formatMoney(costoDirecto.manoObraDirecta)} />
-        <MetricTile label="Total costos directos" value={formatMoney(costoDirecto.totalDirecto)} />
+        <MetricTile
+          label="Total costos directos"
+          value={formatMoney(costoDirecto.totalDirecto)}
+          info="Total directo = materiales + mano de obra directa + otros directos. Unitario = total directo ÷ unidades."
+        />
       </div>
 
       <Divider />

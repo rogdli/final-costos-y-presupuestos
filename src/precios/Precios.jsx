@@ -7,13 +7,18 @@ import { formatMoney } from '../shared/format'
 
 export default function Precios({ productos, margen, preciosSugeridos, utilidadObjetivo }) {
   return (
-    <Card info="El precio de venta se usa para calcular ingresos y márgenes. El de competencia sirve para comparar. El precio mínimo cubre el costo variable más su parte de los fijos, y el sugerido agrega la utilidad objetivo mensual.">
+    <Card info="Mínimo = costo variable unitario + fijos ÷ unidades. Sugerido = costo variable unitario + (fijos + utilidad objetivo) ÷ unidades.">
       <div className="ui-metric-row">
         <MetricTile
           label="Contribución mínima unitaria"
           value={formatMoney(preciosSugeridos.contribucionMinima)}
+          info="Contribución mínima = costos fijos ÷ unidades vendidas."
         />
-        <MetricTile label="Contribución deseada unitaria" value={formatMoney(preciosSugeridos.contribucionDeseada)} />
+        <MetricTile
+          label="Contribución deseada unitaria"
+          value={formatMoney(preciosSugeridos.contribucionDeseada)}
+          info="Contribución deseada = (costos fijos + utilidad objetivo) ÷ unidades vendidas."
+        />
         <MetricTile label="Utilidad mensual objetivo" value={formatMoney(utilidadObjetivo)} />
       </div>
 

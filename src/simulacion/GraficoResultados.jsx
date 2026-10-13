@@ -14,7 +14,7 @@ export default function GraficoResultados({ productos, margen }) {
   ]))
 
   return (
-    <Card title="Ventas, costos y margen por producto">
+    <Card title="Ventas, costos y margen por producto" info="Ventas = precio × cantidad. Costos variables = costo variable unitario × cantidad. Margen = ventas − costos variables.">
       {filas.length === 0 ? (
         <p className="ui-hint">Agregá productos para ver la comparación.</p>
       ) : (

@@ -11,6 +11,7 @@ import AlertaCobertura from '../alertas/AlertaCobertura'
 import GraficoResultados from './GraficoResultados'
 import { formatMoney, formatNumber, formatPercent } from '../shared/format'
 import { numeroNoNegativo } from '../shared/numeros'
+import { AYUDA_FORMULAS } from '../shared/ayudaFormulas'
 
 /** Diferencia contra el caso base, para leer el efecto de cada cambio. */
 function Delta({ base, simulado, mejorSiBaja = false }) {
@@ -152,11 +153,11 @@ export default function Simulador({
         }
       >
         <div className="ui-metric-row">
-          <MetricTile label="Ingreso total" value={formatMoney(casoSimulado.ingresosTotales)} />
-          <MetricTile label="Costo variable total" value={formatMoney(casoSimulado.costoVariableTotal)} />
-          <MetricTile label="Costo fijo total" value={formatMoney(casoSimulado.costosFijosTotales)} />
-          <MetricTile label="Margen de contribución total" value={formatMoney(casoSimulado.margen.mcTotalGlobal)} />
-          <MetricTile label="Índice de margen de contribución" value={formatPercent(sim.imc)} />
+          <MetricTile label="Ingreso total" value={formatMoney(casoSimulado.ingresosTotales)} info={AYUDA_FORMULAS.ingresos} />
+          <MetricTile label="Costo variable total" value={formatMoney(casoSimulado.costoVariableTotal)} info={AYUDA_FORMULAS.costosVariables} />
+          <MetricTile label="Costo fijo total" value={formatMoney(casoSimulado.costosFijosTotales)} info={AYUDA_FORMULAS.costosFijos} />
+          <MetricTile label="Margen de contribución total" value={formatMoney(casoSimulado.margen.mcTotalGlobal)} info={AYUDA_FORMULAS.margen} />
+          <MetricTile label="Índice de margen de contribución" value={formatPercent(sim.imc)} info={AYUDA_FORMULAS.indiceMargen} />
         </div>
 
         <div className="ui-metric-row ui-metric-row--spaced">
@@ -164,11 +165,13 @@ export default function Simulador({
             label="Punto de equilibrio en $"
             value={sim.alcanzable ? formatMoney(sim.peEnPesos) : 'No alcanzable'}
             tone={sim.alcanzable ? 'espresso' : 'terracotta'}
+            info={AYUDA_FORMULAS.puntoEquilibrio}
           />
           <MetricTile
             label="Resultado operativo simulado"
             value={formatMoney(sim.resultadoOperativo)}
             tone={sim.cubreCostosFijos ? 'espresso' : 'terracotta'}
+            info={AYUDA_FORMULAS.resultado}
           />
         </div>
 
@@ -184,7 +187,7 @@ export default function Simulador({
       <GraficoResultados productos={productos} margen={casoSimulado.margen} />
 
       <Card title="Variables del escenario">
-        <SectionHeading info="Mové la barra para subir o bajar todos los precios respecto del precio base. Por ejemplo, 110% aumenta cada precio un 10%. Podés ajustar un producto por separado abajo; si volvés a mover la barra global, el porcentaje se aplica otra vez a todos.">Precio global</SectionHeading>
+        <SectionHeading info="Precio simulado = precio base × porcentaje. Ejemplo: 110% = base × 1,10 para todos.">Precio global</SectionHeading>
         <div className="ui-global-price">
           <div className="ui-global-price__heading">
             <label htmlFor="precio-global">Mismo ajuste para todos los productos</label>
@@ -211,7 +214,7 @@ export default function Simulador({
           </div>
         </div>
         <Divider />
-        <SectionHeading>Precio y cantidad por producto</SectionHeading>
+        <SectionHeading info="MC unitario = precio simulado − costo variable unitario. Sugerido = costo variable unitario + (fijos + utilidad objetivo) ÷ unidades.">Precio y cantidad por producto</SectionHeading>
 
         <Table>
           <thead>
@@ -256,7 +259,7 @@ export default function Simulador({
         </p>
 
         <Divider />
-        <SectionHeading info="En las barras de costos, 100% deja el valor actual, 90% lo baja un 10% y 110% lo sube un 10%. Al cambiar cantidades, los costos variables asociados a productos acompañan ese volumen; los variables generales se ajustan con el driver elegido. Si el driver son horas, se estiman según las horas por unidad del caso base. Los datos base no se modifican.">
+        <SectionHeading info="Costo simulado = costo base × porcentaje. Ejemplo: 90% = base × 0,90. La cantidad también ajusta los costos variables.">
           Costos y utilidad
         </SectionHeading>
 
@@ -300,7 +303,7 @@ export default function Simulador({
         </div>
       </Card>
 
-      <Card title="Punto de equilibrio del escenario, por producto">
+      <Card title="Punto de equilibrio del escenario, por producto" info="Participación = ventas del producto ÷ ventas totales. PE del producto = PE total × participación. Unidades = PE del producto ÷ precio.">
         <Table>
           <thead>
             <tr>

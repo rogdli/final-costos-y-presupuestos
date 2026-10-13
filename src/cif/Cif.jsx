@@ -77,7 +77,7 @@ export default function Cif({ productos, cif, control, metodoCif, onCambiarMetod
 
   return (
     <Card
-      info="Al pool indirecto entra todo comprobante cargado sin producto asociado, sea CIF de fábrica, mano de obra general o gasto de administración y ventas. Se reparte entre los productos según el driver elegido, de modo que no quede plata sin llegar a un producto."
+      info="Indirectos = suma de comprobantes sin producto asociado. Se reparten por unidades u horas."
       actions={
         <div className="ui-toggle-row">
           <span className="ui-toggle-row__label">Driver de asignación</span>
@@ -99,14 +99,22 @@ export default function Cif({ productos, cif, control, metodoCif, onCambiarMetod
       }
     >
       <div className="ui-metric-row">
-        <MetricTile label="Pool indirecto total" value={formatMoney(cif.cifTotal)} />
+        <MetricTile
+          label="Pool indirecto total"
+          value={formatMoney(cif.cifTotal)}
+          info="Pool indirecto = suma de comprobantes sin producto asociado."
+        />
         <MetricTile label="Parte fija" value={formatMoney(cif.cifFijo)} />
         <MetricTile label="Parte variable" value={formatMoney(cif.cifVariable)} />
         <MetricTile
           label={porHoras ? 'Base: horas de producción' : 'Base: unidades vendidas'}
           value={formatNumber(cif.base)}
         />
-        <MetricTile label={porHoras ? 'Tasa por hora' : 'Tasa por unidad'} value={formatMoney(cif.tasa)} />
+        <MetricTile
+          label={porHoras ? 'Tasa por hora' : 'Tasa por unidad'}
+          value={formatMoney(cif.tasa)}
+          info={`Tasa = pool indirecto ÷ ${porHoras ? 'horas totales' : 'unidades totales'}. Asignado = tasa × ${porHoras ? 'horas' : 'unidades'} del producto.`}
+        />
       </div>
 
       <Tabs

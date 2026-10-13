@@ -5,6 +5,7 @@ import Divider from '../shared/ui/Divider'
 import SectionHeading from '../shared/ui/SectionHeading'
 import AlertaCobertura from '../alertas/AlertaCobertura'
 import { formatMoney, formatNumber, formatPercent } from '../shared/format'
+import { AYUDA_FORMULAS } from '../shared/ayudaFormulas'
 
 export default function PuntoEquilibrio({
   costosFijosTotales,
@@ -21,30 +22,32 @@ export default function PuntoEquilibrio({
     <Card
       info={
         puntoEquilibrio.alcanzable
-          ? `Con esta estructura de costos y estos precios hay que facturar ${formatMoney(puntoEquilibrio.peEnPesos)} en el mes para salir hecho. Hoy se facturan ${formatMoney(ingresosTotales)}.`
-          : 'No hay nivel de ventas que cubra los costos fijos: el margen de contribución es cero o negativo, así que vender más agranda la pérdida. Hay que subir precios o bajar el costo variable.'
+          ? `PE = costos fijos ÷ índice de margen: ${formatMoney(puntoEquilibrio.peEnPesos)}. Ventas actuales: ${formatMoney(ingresosTotales)}.`
+          : 'Sin punto de equilibrio: el índice de margen es cero o negativo.'
       }
     >
       <div className="ui-metric-row">
-        <MetricTile label="Ingreso total" value={formatMoney(ingresosTotales)} />
-        <MetricTile label="Costo variable total" value={formatMoney(costoVariableTotal)} />
-        <MetricTile label="Costos fijos totales" value={formatMoney(costosFijosTotales)} />
-        <MetricTile label="Margen de contribución total" value={formatMoney(margen.mcTotalGlobal)} />
-        <MetricTile label="Índice de margen de contribución" value={formatPercent(puntoEquilibrio.imc)} />
+        <MetricTile label="Ingreso total" value={formatMoney(ingresosTotales)} info={AYUDA_FORMULAS.ingresos} />
+        <MetricTile label="Costo variable total" value={formatMoney(costoVariableTotal)} info={AYUDA_FORMULAS.costosVariables} />
+        <MetricTile label="Costos fijos totales" value={formatMoney(costosFijosTotales)} info={AYUDA_FORMULAS.costosFijos} />
+        <MetricTile label="Margen de contribución total" value={formatMoney(margen.mcTotalGlobal)} info={AYUDA_FORMULAS.margen} />
+        <MetricTile label="Índice de margen de contribución" value={formatPercent(puntoEquilibrio.imc)} info={AYUDA_FORMULAS.indiceMargen} />
         <MetricTile
           label="Punto de equilibrio en $"
           value={puntoEquilibrio.alcanzable ? formatMoney(puntoEquilibrio.peEnPesos) : 'No alcanzable'}
           tone={puntoEquilibrio.alcanzable ? 'espresso' : 'terracotta'}
+          info={AYUDA_FORMULAS.puntoEquilibrio}
         />
         <MetricTile
           label="Resultado operativo"
           value={formatMoney(puntoEquilibrio.resultadoOperativo)}
           tone={tonoResultado}
+          info={AYUDA_FORMULAS.resultado}
         />
       </div>
 
       <Divider />
-      <SectionHeading info="La apertura por producto depende del mix: si cambia la proporción de lo que se vende, cambia cuánto tiene que facturar cada uno.">
+      <SectionHeading info="MC unitario = precio − costo variable unitario. Participación = ventas del producto ÷ ventas totales. PE del producto = PE total × participación.">
         Punto de equilibrio por producto, según el mix de ventas
       </SectionHeading>
 

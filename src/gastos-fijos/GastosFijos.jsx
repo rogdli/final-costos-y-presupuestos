@@ -63,10 +63,18 @@ export default function GastosFijos({ comprobantes, gastosAdministracion, costos
   )
 
   return (
-    <Card info="Los costos fijos totales son todo lo que cargaste con comportamiento Fijo, sin importar el tipo funcional: es el numerador del punto de equilibrio. Los gastos de administración y ventas son una parte de ese total, y como se cargan sin producto asociado también se reparten entre los productos desde el pool indirecto.">
+    <Card info="Costos fijos = suma de importes marcados Fijo. Gastos de administración y ventas = suma de ese tipo funcional.">
       <div className="ui-metric-row">
-        <MetricTile label="Gastos de administración y ventas" value={formatMoney(gastosAdministracion)} />
-        <MetricTile label="Costos fijos totales de la empresa" value={formatMoney(costosFijosTotales)} />
+        <MetricTile
+          label="Gastos de administración y ventas"
+          value={formatMoney(gastosAdministracion)}
+          info="Suma de comprobantes tipo Gasto Adm. y Venta."
+        />
+        <MetricTile
+          label="Costos fijos totales de la empresa"
+          value={formatMoney(costosFijosTotales)}
+          info="Suma de comprobantes marcados Fijo."
+        />
       </div>
 
       <Tabs
