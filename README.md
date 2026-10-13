@@ -34,7 +34,7 @@ Las carpetas con cálculos tienen un módulo `*.calc.js` sin React, con su test 
 
 La app arranca con el caso de la rotisería cargado: 3 productos y 27 comprobantes. Los cambios se guardan solos en el `localStorage` del navegador.
 
-**Exportar Excel** descarga un `.xlsx` con las hojas Productos, Comprobantes y Parametros. **Importar Excel** lee ese mismo formato.
+**Exportar Excel** descarga un `.xlsx` con las hojas Productos, Comprobantes y Parametros. En Productos, `precioVenta` calcula ingresos y márgenes; `precioCompetencia` se usa para comparar. **Importar Excel** lee ese mismo formato y también acepta archivos anteriores sin `precioVenta`, tomando en ese caso el precio de competencia como valor inicial de venta.
 
 ## Validación
 
