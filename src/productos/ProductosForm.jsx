@@ -7,6 +7,7 @@ import Field from '../shared/ui/Field'
 import SectionHeading from '../shared/ui/SectionHeading'
 import Divider from '../shared/ui/Divider'
 import { formatMoney, formatNumber } from '../shared/format'
+import { numeroNoNegativo } from '../shared/numeros'
 
 const vacio = { nombre: '', cantidadVendida: '', horasProduccion: '', precioCompetencia: '' }
 
@@ -22,17 +23,42 @@ function nuevoId(nombre, productos) {
 
 export default function ProductosForm({ productos, comprobantes, onAgregar, onEliminar }) {
   const [form, setForm] = useState(vacio)
+  const [errores, setErrores] = useState({})
+
+  function cambiarCampo(campo, valor) {
+    if (campo !== 'nombre' && valor !== '' && Number(valor) < 0) {
+      setErrores((prev) => ({ ...prev, [campo]: 'No puede ser negativo.' }))
+      return
+    }
+    setForm((prev) => ({ ...prev, [campo]: valor }))
+    setErrores((prev) => ({ ...prev, [campo]: undefined }))
+  }
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (!form.nombre.trim()) return
+    const nuevosErrores = {}
+    if (!form.nombre.trim()) nuevosErrores.nombre = 'Escribí el nombre del producto.'
+    if (form.cantidadVendida === '') nuevosErrores.cantidadVendida = 'Completá la cantidad vendida.'
+    else if (numeroNoNegativo(form.cantidadVendida, { entero: true }) === null) {
+      nuevosErrores.cantidadVendida = 'Usá una cantidad entera de 0 o más.'
+    }
+    if (form.horasProduccion === '') nuevosErrores.horasProduccion = 'Completá las horas de producción.'
+    else if (numeroNoNegativo(form.horasProduccion) === null) {
+      nuevosErrores.horasProduccion = 'Ingresá horas de 0 o más.'
+    }
+    if (form.precioCompetencia === '') nuevosErrores.precioCompetencia = 'Completá el precio de referencia.'
+    else if (numeroNoNegativo(form.precioCompetencia) === null) {
+      nuevosErrores.precioCompetencia = 'Ingresá un precio de 0 o más.'
+    }
+    setErrores(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
 
     onAgregar({
       id: nuevoId(form.nombre, productos),
       nombre: form.nombre.trim(),
-      cantidadVendida: Number(form.cantidadVendida) || 0,
-      horasProduccion: Number(form.horasProduccion) || 0,
-      precioCompetencia: Number(form.precioCompetencia) || 0,
+      cantidadVendida: Number(form.cantidadVendida),
+      horasProduccion: Number(form.horasProduccion),
+      precioCompetencia: Number(form.precioCompetencia),
     })
     setForm(vacio)
   }
@@ -52,30 +78,64 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
   return (
     <>
       <Card title="Agregar producto">
-        <form className="ui-form-grid" onSubmit={handleSubmit}>
+        {Object.values(errores).some(Boolean) && <p className="ui-form-alert" role="alert">Revisá los campos marcados para agregar el producto.</p>}
+        <form className="ui-form-grid ui-form-grid--productos" onSubmit={handleSubmit} noValidate>
           <Field label="Nombre">
-            <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+            <input
+              value={form.nombre}
+              aria-label="Nombre"
+              required
+              placeholder="Ej.: Pollo asado"
+              aria-invalid={Boolean(errores.nombre)}
+              aria-describedby={errores.nombre ? 'producto-nombre-error' : undefined}
+              onChange={(e) => cambiarCampo('nombre', e.target.value)}
+            />
+            {errores.nombre && <span id="producto-nombre-error" className="ui-field__error">{errores.nombre}</span>}
           </Field>
           <Field label="Cantidad vendida">
             <input
               type="number"
+              aria-label="Cantidad vendida"
+              min="0"
+              step="1"
+              required
+              placeholder="Ej.: 500"
               value={form.cantidadVendida}
-              onChange={(e) => setForm({ ...form, cantidadVendida: e.target.value })}
+              aria-invalid={Boolean(errores.cantidadVendida)}
+              aria-describedby={errores.cantidadVendida ? 'producto-cantidad-error' : undefined}
+              onChange={(e) => cambiarCampo('cantidadVendida', e.target.value)}
             />
+            {errores.cantidadVendida && <span id="producto-cantidad-error" className="ui-field__error">{errores.cantidadVendida}</span>}
           </Field>
           <Field label="Horas de producción">
             <input
               type="number"
+              aria-label="Horas de producción"
+              min="0"
+              step="any"
+              required
+              placeholder="Ej.: 100"
               value={form.horasProduccion}
-              onChange={(e) => setForm({ ...form, horasProduccion: e.target.value })}
+              aria-invalid={Boolean(errores.horasProduccion)}
+              aria-describedby={errores.horasProduccion ? 'producto-horas-error' : undefined}
+              onChange={(e) => cambiarCampo('horasProduccion', e.target.value)}
             />
+            {errores.horasProduccion && <span id="producto-horas-error" className="ui-field__error">{errores.horasProduccion}</span>}
           </Field>
           <Field label="Precio competencia">
             <input
               type="number"
+              aria-label="Precio competencia"
+              min="0"
+              step="any"
+              required
+              placeholder="Ej.: 8500"
               value={form.precioCompetencia}
-              onChange={(e) => setForm({ ...form, precioCompetencia: e.target.value })}
+              aria-invalid={Boolean(errores.precioCompetencia)}
+              aria-describedby={errores.precioCompetencia ? 'producto-precio-error' : undefined}
+              onChange={(e) => cambiarCampo('precioCompetencia', e.target.value)}
             />
+            {errores.precioCompetencia && <span id="producto-precio-error" className="ui-field__error">{errores.precioCompetencia}</span>}
           </Field>
           <div className="ui-form-grid__submit">
             <Button type="submit">Agregar producto</Button>
@@ -131,8 +191,8 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
         <Divider />
         <SectionHeading>Al eliminar un producto</SectionHeading>
         <p className="ui-hint">
-          Sus comprobantes directos no se borran: pasan a General y se reparten como indirectos, para que su importe no
-          desaparezca del cálculo.
+          Sus comprobantes no se borran: pasan a General y se reparten como indirectos. Los costos directos pasan a CIF
+          y la mano de obra directa pasa a mano de obra indirecta.
         </p>
       </Card>
     </>
