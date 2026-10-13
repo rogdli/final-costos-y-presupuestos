@@ -89,6 +89,58 @@ function ajustarComprobantes(comprobantes, ajusteVariables, ajusteFijos) {
   })
 }
 
+/**
+ * En una simulación de volumen, los costos variables acompañan la actividad:
+ * los directos siguen las unidades de su producto y los generales siguen el
+ * driver elegido. Para el driver de horas, se estima la nueva carga horaria
+ * usando las horas por unidad del caso base.
+ */
+function escalarVariablesPorVolumen(productosBase, productosSimulados, comprobantes, metodoCif) {
+  const usarHoras = metodoCif === METODO_CIF.HORAS
+  const productosConHorasSimuladas = productosSimulados.map((producto, index) => {
+    const base = productosBase[index]
+    const cantidadBase = Number(base.cantidadVendida) || 0
+    const horasBase = Number(base.horasProduccion) || 0
+    const cantidadSimulada = Number(producto.cantidadVendida) || 0
+    const factorProducto = cantidadBase > 0 ? cantidadSimulada / cantidadBase : 1
+
+    return {
+      ...producto,
+      horasProduccion: usarHoras ? horasBase * factorProducto : producto.horasProduccion,
+    }
+  })
+
+  const totalDriverBase = productosBase.reduce(
+    (total, producto) => total + (Number(usarHoras ? producto.horasProduccion : producto.cantidadVendida) || 0),
+    0
+  )
+  const totalDriverSimulado = productosConHorasSimuladas.reduce(
+    (total, producto) => total + (Number(usarHoras ? producto.horasProduccion : producto.cantidadVendida) || 0),
+    0
+  )
+  const factorPoolIndirecto = totalDriverBase > 0 ? totalDriverSimulado / totalDriverBase : 1
+
+  const productosPorId = new Map(
+    productosBase.map((producto, index) => [producto.id, { base: producto, simulado: productosSimulados[index] }])
+  )
+  const comprobantesEscalados = comprobantes.map((comprobante) => {
+    if (esFijo(comprobante)) return comprobante
+
+    const asociado = productosPorId.get(comprobante.productoId)
+    if (!asociado) {
+      return { ...comprobante, importe: (Number(comprobante.importe) || 0) * factorPoolIndirecto }
+    }
+
+    const cantidadBase = Number(asociado.base.cantidadVendida) || 0
+    const cantidadSimulada = Number(asociado.simulado.cantidadVendida) || 0
+    const factorProducto = cantidadBase > 0 ? cantidadSimulada / cantidadBase : 1
+
+    return { ...comprobante, importe: (Number(comprobante.importe) || 0) * factorProducto }
+  })
+
+  return { productos: productosConHorasSimuladas, comprobantes: comprobantesEscalados }
+}
+
 export function simular(productosBase, comprobantes, overrides = {}) {
   const {
     precios = {},
@@ -106,6 +158,7 @@ export function simular(productosBase, comprobantes, overrides = {}) {
   }))
 
   const comprobantesSimulados = ajustarComprobantes(comprobantes, ajusteVariables, ajusteFijos)
+  const escenario = escalarVariablesPorVolumen(productosBase, productosSimulados, comprobantesSimulados, metodoCif)
 
-  return calcularCasoCompleto(productosSimulados, comprobantesSimulados, { metodoCif, utilidadObjetivo })
+  return calcularCasoCompleto(escenario.productos, escenario.comprobantes, { metodoCif, utilidadObjetivo })
 }
