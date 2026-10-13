@@ -41,7 +41,7 @@ const SECCIONES = [
     id: 'productos',
     label: 'Productos',
     Icon: Package,
-    descripcion: 'Alta de productos: cantidad vendida, horas de producción y precio de competencia.',
+    descripcion: 'Alta de productos: ventas, horas, precio de venta y precio de competencia.',
   },
   {
     id: 'comprobantes',
@@ -77,7 +77,7 @@ const SECCIONES = [
     id: 'precios',
     label: 'Precios',
     Icon: TagIcon,
-    descripcion: 'Precio de competencia comparado contra el precio mínimo y el sugerido.',
+    descripcion: 'Precio de venta frente a competencia, mínimo y sugerido.',
   },
   {
     id: 'punto-equilibrio',
@@ -94,7 +94,33 @@ const SECCIONES = [
 ]
 
 const ESTADO_INICIAL = { precios: {}, cantidades: {}, ajusteVariables: 0, ajusteFijos: 0, porcentajePrecioGlobal: 100 }
-const estadoGuardado = cargarEstado()
+const PRECIOS_EJEMPLO_ANTERIOR = [8500, 9500, 10500]
+
+function esEjemploAnteriorSinCambios(estado) {
+  if (!estado || estado.productos.length !== seedProductos.length) return false
+  if (estado.productos.some((producto, i) => {
+    const ejemplo = seedProductos[i]
+    const precioAnterior = PRECIOS_EJEMPLO_ANTERIOR[i]
+    return producto.id !== ejemplo.id || producto.nombre !== ejemplo.nombre ||
+      producto.cantidadVendida !== ejemplo.cantidadVendida ||
+      producto.horasProduccion !== ejemplo.horasProduccion ||
+      producto.precioCompetencia !== precioAnterior || producto.precioVenta !== precioAnterior
+  })) return false
+
+  const ajustes = estado.overrides ?? ESTADO_INICIAL
+  return JSON.stringify(estado.comprobantes) === JSON.stringify(seedComprobantes) &&
+    (estado.metodoCif ?? METODO_CIF.HORAS) === METODO_CIF.HORAS &&
+    (estado.utilidadObjetivo ?? seedUtilidadObjetivo) === seedUtilidadObjetivo &&
+    Object.keys(ajustes.precios ?? {}).length === 0 &&
+    Object.keys(ajustes.cantidades ?? {}).length === 0 &&
+    (ajustes.ajusteVariables ?? 0) === 0 && (ajustes.ajusteFijos ?? 0) === 0 &&
+    (ajustes.porcentajePrecioGlobal ?? 100) === 100
+}
+
+const estadoPersistido = cargarEstado()
+const estadoGuardado = esEjemploAnteriorSinCambios(estadoPersistido)
+  ? { ...estadoPersistido, productos: seedProductos }
+  : estadoPersistido
 const overridesGuardados = estadoGuardado?.overrides
 
 const MENU_PLEGADO_KEY = 'costos-rotiseria:menu-plegado'
@@ -175,7 +201,7 @@ export default function App() {
         : Object.fromEntries(
             productos.map((producto) => [
               producto.id,
-              Math.round(Math.max(0, Number(producto.precioCompetencia) || 0) * valor) / 100,
+              Math.round(Math.max(0, Number(producto.precioVenta ?? producto.precioCompetencia) || 0) * valor) / 100,
             ])
           ),
     }))
@@ -197,6 +223,34 @@ export default function App() {
       delete precios[id]
       delete cantidades[id]
       return { ...prev, precios, cantidades }
+    })
+  }
+
+  function editarProducto(actualizado) {
+    setProductos((prev) => prev.map((producto) => producto.id === actualizado.id ? actualizado : producto))
+    setOverrides((prev) => {
+      if (prev.porcentajePrecioGlobal === null || prev.porcentajePrecioGlobal === 100) return prev
+      return {
+        ...prev,
+        precios: {
+          ...prev.precios,
+          [actualizado.id]: Math.round(actualizado.precioVenta * prev.porcentajePrecioGlobal) / 100,
+        },
+      }
+    })
+  }
+
+  function agregarProducto(producto) {
+    setProductos((prev) => [...prev, producto])
+    setOverrides((prev) => {
+      if (prev.porcentajePrecioGlobal === null || prev.porcentajePrecioGlobal === 100) return prev
+      return {
+        ...prev,
+        precios: {
+          ...prev.precios,
+          [producto.id]: Math.round(producto.precioVenta * prev.porcentajePrecioGlobal) / 100,
+        },
+      }
     })
   }
 
@@ -300,7 +354,8 @@ export default function App() {
             <ProductosForm
               productos={productos}
               comprobantes={comprobantes}
-              onAgregar={(p) => setProductos([...productos, p])}
+              onAgregar={agregarProducto}
+              onEditar={editarProducto}
               onEliminar={eliminarProducto}
             />
           )}
@@ -311,6 +366,7 @@ export default function App() {
               productos={productos}
               control={casoBase.control}
               onAgregar={(c) => setComprobantes([...comprobantes, c])}
+              onEditar={(actualizado) => setComprobantes((prev) => prev.map((c) => c.numero === actualizado.numero ? actualizado : c))}
               onEliminar={(numero) => setComprobantes(comprobantes.filter((c) => c.numero !== numero))}
             />
           )}

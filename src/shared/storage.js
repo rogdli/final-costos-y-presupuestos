@@ -26,6 +26,7 @@ export function cargarEstado() {
       cantidadVendida: limpiarNumero(producto.cantidadVendida, { entero: true }),
       horasProduccion: limpiarNumero(producto.horasProduccion),
       precioCompetencia: limpiarNumero(producto.precioCompetencia),
+      precioVenta: limpiarNumero(producto.precioVenta ?? producto.precioCompetencia),
     }))
     const idsProductos = new Set(productos.map((producto) => producto.id))
     const comprobantes = estado.comprobantes.map((comprobante) => {
@@ -152,6 +153,7 @@ export async function importarExcel(file) {
       cantidadVendida: numeroExcel(p.cantidadVendida, `Productos, fila ${i + 2}, cantidad vendida`, { entero: true }),
       horasProduccion: numeroExcel(p.horasProduccion, `Productos, fila ${i + 2}, horas de producción`),
       precioCompetencia: numeroExcel(p.precioCompetencia, `Productos, fila ${i + 2}, precio competencia`),
+      precioVenta: numeroExcel(p.precioVenta ?? p.precioCompetencia, `Productos, fila ${i + 2}, precio de venta`),
     }
   })
 

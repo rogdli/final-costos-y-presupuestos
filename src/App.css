@@ -203,6 +203,7 @@
 .app-topbar__actions {
   display: flex;
   gap: var(--spacing-8);
+  flex-wrap: wrap;
 }
 
 .app-content {
@@ -528,7 +529,7 @@
 }
 
 .ui-form-grid--productos {
-  grid-template-columns: repeat(4, minmax(140px, 1fr)) max-content;
+  grid-template-columns: repeat(5, minmax(140px, 1fr)) max-content;
 }
 
 .ui-form-grid--comprobantes {
@@ -547,7 +548,9 @@
 
 .ui-form-grid__submit {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-8);
   padding-top: calc(var(--text-caption) * var(--leading-body) + var(--spacing-4));
   white-space: nowrap;
 }
@@ -596,7 +599,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-8);
-  max-width: 640px;
+  width: 100%;
 }
 
 .ui-global-price__heading {
@@ -665,6 +668,61 @@
 .ui-cost-range__value {
   color: var(--color-bark);
   font-size: var(--text-caption);
+}
+
+.ui-product-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-16);
+  margin-top: var(--spacing-16);
+}
+
+.ui-product-chart__item {
+  border: 1px solid var(--color-linen-border);
+  border-radius: var(--radius-cards);
+  padding: var(--spacing-16);
+  min-width: 0;
+}
+
+.ui-product-chart__item h3 {
+  font-size: var(--text-body-sm);
+  margin: 0 0 var(--spacing-16);
+}
+
+.ui-product-chart__row {
+  display: grid;
+  grid-template-columns: 105px minmax(40px, 1fr) 112px;
+  gap: var(--spacing-8);
+  align-items: center;
+  margin-top: var(--spacing-8);
+  font-size: var(--text-caption);
+}
+
+.ui-product-chart__row strong {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ui-product-chart__track {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-cream-canvas);
+  overflow: hidden;
+}
+
+.ui-product-chart__bar {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.ui-product-chart__bar--ventas { background: var(--color-amber-signal); }
+.ui-product-chart__bar--costos { background: var(--color-bark); }
+.ui-product-chart__bar--margen { background: #66866a; }
+.ui-product-chart__bar--negativo { background: var(--color-terracotta); }
+
+@media (max-width: 480px) {
+  .ui-product-chart__row { grid-template-columns: 1fr minmax(40px, 1fr); }
+  .ui-product-chart__row strong { grid-column: 2; }
 }
 
 .ui-field {

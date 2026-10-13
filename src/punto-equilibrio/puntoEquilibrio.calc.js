@@ -6,7 +6,7 @@ export function calcularMargenContribucion(productos, costosVariablesUnitarios, 
     const mcTotal = mcUnitario * producto.cantidadVendida
     const ventas = precio * producto.cantidadVendida
 
-    return { productoId: producto.id, costoVariableUnitario, precio, mcUnitario, mcTotal, ventas }
+    return { productoId: producto.id, cantidadVendida: producto.cantidadVendida, costoVariableUnitario, precio, mcUnitario, mcTotal, ventas }
   })
 
   const mcTotalGlobal = porProducto.reduce((total, p) => total + p.mcTotal, 0)

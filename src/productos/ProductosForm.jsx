@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import Card from '../shared/ui/Card'
 import Table from '../shared/ui/Table'
 import Button from '../shared/ui/Button'
@@ -7,7 +7,7 @@ import Field from '../shared/ui/Field'
 import { formatMoney, formatNumber } from '../shared/format'
 import { numeroNoNegativo } from '../shared/numeros'
 
-const vacio = { nombre: '', cantidadVendida: '', horasProduccion: '', precioCompetencia: '' }
+const vacio = { nombre: '', cantidadVendida: '', horasProduccion: '', precioCompetencia: '', precioVenta: '' }
 
 /** Identificador único a partir del nombre, con sufijo si ya existe. */
 function nuevoId(nombre, productos) {
@@ -19,9 +19,30 @@ function nuevoId(nombre, productos) {
   return `${base}-${sufijo}`
 }
 
-export default function ProductosForm({ productos, comprobantes, onAgregar, onEliminar }) {
+export default function ProductosForm({ productos, comprobantes, onAgregar, onEditar, onEliminar }) {
   const [form, setForm] = useState(vacio)
   const [errores, setErrores] = useState({})
+  const [editandoId, setEditandoId] = useState(null)
+  const formularioRef = useRef(null)
+
+  function editar(producto) {
+    setEditandoId(producto.id)
+    setForm({
+      nombre: producto.nombre,
+      cantidadVendida: String(producto.cantidadVendida),
+      horasProduccion: String(producto.horasProduccion),
+      precioCompetencia: String(producto.precioCompetencia),
+      precioVenta: String(producto.precioVenta ?? producto.precioCompetencia),
+    })
+    setErrores({})
+    formularioRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+  }
+
+  function cancelarEdicion() {
+    setEditandoId(null)
+    setForm(vacio)
+    setErrores({})
+  }
 
   function cambiarCampo(campo, valor) {
     if (campo !== 'nombre' && valor !== '' && Number(valor) < 0) {
@@ -34,7 +55,9 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
 
   function handleSubmit(e) {
     e.preventDefault()
-    const nuevosErrores = {}
+    const nuevosErrores = Object.fromEntries(
+      Object.entries(errores).filter(([, mensaje]) => mensaje === 'No puede ser negativo.')
+    )
     if (!form.nombre.trim()) nuevosErrores.nombre = 'Escribí el nombre del producto.'
     if (form.cantidadVendida === '') nuevosErrores.cantidadVendida = 'Completá la cantidad vendida.'
     else if (numeroNoNegativo(form.cantidadVendida, { entero: true }) === null) {
@@ -48,17 +71,24 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
     else if (numeroNoNegativo(form.precioCompetencia) === null) {
       nuevosErrores.precioCompetencia = 'Ingresá un precio de 0 o más.'
     }
+    if (form.precioVenta === '') nuevosErrores.precioVenta = 'Completá el precio de venta.'
+    else if (numeroNoNegativo(form.precioVenta) === null) {
+      nuevosErrores.precioVenta = 'Ingresá un precio de 0 o más.'
+    }
     setErrores(nuevosErrores)
     if (Object.keys(nuevosErrores).length > 0) return
 
-    onAgregar({
-      id: nuevoId(form.nombre, productos),
+    const producto = {
+      id: editandoId ?? nuevoId(form.nombre, productos),
       nombre: form.nombre.trim(),
       cantidadVendida: Number(form.cantidadVendida),
       horasProduccion: Number(form.horasProduccion),
       precioCompetencia: Number(form.precioCompetencia),
-    })
-    setForm(vacio)
+      precioVenta: Number(form.precioVenta),
+    }
+    if (editandoId) onEditar(producto)
+    else onAgregar(producto)
+    cancelarEdicion()
   }
 
   function comprobantesDe(productoId) {
@@ -76,11 +106,11 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
   return (
     <>
       <Card
-        title="Agregar producto"
-        info="Las unidades vendidas y las horas de producción son los dos drivers con los que se reparten los costos indirectos. Si están en cero, el pool indirecto no se puede repartir."
+        title={editandoId ? 'Editar producto' : 'Agregar producto'}
+        info="Las unidades vendidas y las horas de producción reparten los costos indirectos. El precio de venta calcula ingresos y márgenes; el precio de competencia solo sirve para comparar."
       >
-        {Object.values(errores).some(Boolean) && <p className="ui-form-alert" role="alert">Revisá los campos marcados para agregar el producto.</p>}
-        <form className="ui-form-grid ui-form-grid--productos" onSubmit={handleSubmit} noValidate>
+        {Object.values(errores).some(Boolean) && <p className="ui-form-alert" role="alert">Revisá los campos marcados para {editandoId ? 'guardar' : 'agregar'} el producto.</p>}
+        <form ref={formularioRef} className="ui-form-grid ui-form-grid--productos" onSubmit={handleSubmit} noValidate>
           <Field label="Nombre">
             <input
               value={form.nombre}
@@ -138,8 +168,24 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
             />
             {errores.precioCompetencia && <span id="producto-precio-error" className="ui-field__error">{errores.precioCompetencia}</span>}
           </Field>
+          <Field label="Precio de venta">
+            <input
+              type="number"
+              aria-label="Precio de venta"
+              min="0"
+              step="any"
+              required
+              placeholder="Ej.: 8500"
+              value={form.precioVenta}
+              aria-invalid={Boolean(errores.precioVenta)}
+              aria-describedby={errores.precioVenta ? 'producto-venta-error' : undefined}
+              onChange={(e) => cambiarCampo('precioVenta', e.target.value)}
+            />
+            {errores.precioVenta && <span id="producto-venta-error" className="ui-field__error">{errores.precioVenta}</span>}
+          </Field>
           <div className="ui-form-grid__submit">
-            <Button type="submit">Agregar producto</Button>
+            <Button type="submit">{editandoId ? 'Guardar cambios' : 'Agregar producto'}</Button>
+            {editandoId && <Button type="button" variant="ghost" onClick={cancelarEdicion}>Cancelar</Button>}
           </div>
         </form>
       </Card>
@@ -155,6 +201,7 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
               <th>Cantidad vendida</th>
               <th>Horas de producción</th>
               <th>Precio competencia</th>
+              <th>Precio de venta</th>
               <th>Comprobantes directos</th>
               <th />
             </tr>
@@ -166,9 +213,16 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
                 <td>{formatNumber(p.cantidadVendida)}</td>
                 <td>{formatNumber(p.horasProduccion)}</td>
                 <td>{formatMoney(p.precioCompetencia)}</td>
+                <td>{formatMoney(p.precioVenta ?? p.precioCompetencia)}</td>
                 <td>{comprobantesDe(p.id)}</td>
                 <td>
-                  <Button variant="ghost" onClick={() => onEliminar(p.id)} aria-label={`Eliminar ${p.nombre}`}>
+                  <Button variant="ghost" onClick={() => editar(p)} aria-label={`Editar ${p.nombre}`}>
+                    <Pencil size={14} strokeWidth={1.5} />
+                  </Button>
+                  <Button variant="ghost" onClick={() => {
+                    if (editandoId === p.id) cancelarEdicion()
+                    onEliminar(p.id)
+                  }} aria-label={`Eliminar ${p.nombre}`}>
                     <Trash2 size={14} strokeWidth={1.5} />
                   </Button>
                 </td>
@@ -180,6 +234,7 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
               <th>Totales</th>
               <th>{formatNumber(totales.cantidad)}</th>
               <th>{formatNumber(totales.horas)}</th>
+              <th />
               <th />
               <th />
               <th />

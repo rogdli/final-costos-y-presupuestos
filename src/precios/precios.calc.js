@@ -11,6 +11,7 @@ export function calcularPreciosSugeridos(productos, costosVariablesUnitarios, co
     return {
       productoId: producto.id,
       precioCompetencia: producto.precioCompetencia,
+      precioVenta: producto.precioVenta ?? producto.precioCompetencia,
       precioMinimo,
       precioSugerido,
       ventasSugeridas: precioSugerido * producto.cantidadVendida,

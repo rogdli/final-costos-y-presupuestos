@@ -8,6 +8,7 @@ import Field from '../shared/ui/Field'
 import Divider from '../shared/ui/Divider'
 import SectionHeading from '../shared/ui/SectionHeading'
 import AlertaCobertura from '../alertas/AlertaCobertura'
+import GraficoResultados from './GraficoResultados'
 import { formatMoney, formatNumber, formatPercent } from '../shared/format'
 import { numeroNoNegativo } from '../shared/numeros'
 
@@ -30,7 +31,7 @@ function Delta({ base, simulado, mejorSiBaja = false }) {
 }
 
 function PrecioSimuladoControl({ producto, precioIngresado, onCambiarPrecio }) {
-  const precioBase = Math.max(0, Number(producto.precioCompetencia) || 0)
+  const precioBase = Math.max(0, Number(producto.precioVenta ?? producto.precioCompetencia) || 0)
   const precioSimulado = precioIngresado ?? precioBase
   const [precioMaximo, setPrecioMaximo] = useState(() =>
     Math.max(precioBase * 2, precioSimulado, precioBase > 0 ? 1 : 1000)
@@ -62,7 +63,7 @@ function PrecioSimuladoControl({ producto, precioIngresado, onCambiarPrecio }) {
         step="any"
         aria-label={`Precio simulado de ${producto.nombre}`}
         aria-invalid={Boolean(error)}
-        placeholder={producto.precioCompetencia}
+        placeholder={precioBase}
         value={precioIngresado ?? ''}
         onChange={(e) => cambiarPrecioExacto(e.target.value)}
       />
@@ -180,8 +181,10 @@ export default function Simulador({
         <AlertaCobertura key={String(sim.cubreCostosFijos)} cubreCostosFijos={sim.cubreCostosFijos} />
       </Card>
 
+      <GraficoResultados productos={productos} margen={casoSimulado.margen} />
+
       <Card title="Variables del escenario">
-        <SectionHeading>Precio global</SectionHeading>
+        <SectionHeading info="Mové la barra para subir o bajar todos los precios respecto del precio base. Por ejemplo, 110% aumenta cada precio un 10%. Podés ajustar un producto por separado abajo; si volvés a mover la barra global, el porcentaje se aplica otra vez a todos.">Precio global</SectionHeading>
         <div className="ui-global-price">
           <div className="ui-global-price__heading">
             <label htmlFor="precio-global">Mismo ajuste para todos los productos</label>
@@ -207,12 +210,6 @@ export default function Simulador({
             <span>200%</span>
           </div>
         </div>
-        <p className="ui-hint">
-          Mové la barra para subir o bajar todos los precios en la misma proporción respecto del precio base. Por
-          ejemplo, 110% aumenta cada precio un 10%. Después podés ajustar un producto por separado abajo; al volver a
-          mover la barra global se aplica el porcentaje a todos otra vez.
-        </p>
-
         <Divider />
         <SectionHeading>Precio y cantidad por producto</SectionHeading>
 
@@ -220,7 +217,7 @@ export default function Simulador({
           <thead>
             <tr>
               <th>Producto</th>
-              <th>Precio base</th>
+              <th>Precio de venta base</th>
               <th>Precio simulado</th>
               <th>Cantidad base</th>
               <th>Cantidad simulada</th>
@@ -231,7 +228,7 @@ export default function Simulador({
             {productos.map((producto, i) => (
               <tr key={producto.id}>
                 <td>{producto.nombre}</td>
-                <td>{formatMoney(producto.precioCompetencia)}</td>
+                <td>{formatMoney(producto.precioVenta ?? producto.precioCompetencia)}</td>
                 <td>
                   <PrecioSimuladoControl
                     producto={producto}

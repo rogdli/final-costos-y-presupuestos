@@ -12,20 +12,22 @@ export const COMPORTAMIENTOS = [COMPORTAMIENTO.VARIABLE, COMPORTAMIENTO.FIJO]
 export const METODOS_CIF = { UNIDADES: 'unidades', HORAS: 'horas' }
 
 export const seedProductos = [
-  { id: 'pollo-asado', nombre: 'Pollo asado', cantidadVendida: 500, horasProduccion: 100, precioCompetencia: 8500 },
+  { id: 'pollo-asado', nombre: 'Pollo asado', cantidadVendida: 500, horasProduccion: 100, precioCompetencia: 16000, precioVenta: 15000 },
   {
     id: 'docena-empanadas',
     nombre: 'Docena de empanadas',
     cantidadVendida: 400,
     horasProduccion: 140,
-    precioCompetencia: 9500,
+    precioCompetencia: 20000,
+    precioVenta: 19000,
   },
   {
     id: 'milanesa-guarnicion',
     nombre: 'Milanesa con guarnición',
     cantidadVendida: 450,
     horasProduccion: 160,
-    precioCompetencia: 10500,
+    precioCompetencia: 17000,
+    precioVenta: 16000,
   },
 ]
 

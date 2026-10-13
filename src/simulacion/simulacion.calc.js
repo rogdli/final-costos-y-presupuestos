@@ -27,7 +27,7 @@ export function calcularCasoCompleto(
   // Costeo variable: solo lo marcado como Variable integra el costo variable
   // unitario, venga de un comprobante directo o del pool indirecto.
   const costosVariablesUnitarios = costosUnitarios.porProducto.map((p) => p.costoVariableUnitario)
-  const precios = productos.map((p) => p.precioCompetencia)
+  const precios = productos.map((p) => p.precioVenta ?? p.precioCompetencia)
 
   const margen = calcularMargenContribucion(productos, costosVariablesUnitarios, precios)
   const puntoEquilibrio = calcularPuntoEquilibrio(costosFijosTotales, margen.mcTotalGlobal, margen.ventasTotales)
@@ -155,7 +155,7 @@ export function simular(productosBase, comprobantes, overrides = {}) {
 
   const productosSimulados = productosBase.map((producto) => ({
     ...producto,
-    precioCompetencia: numeroNoNegativo(precios[producto.id]) ?? producto.precioCompetencia,
+    precioVenta: numeroNoNegativo(precios[producto.id]) ?? producto.precioVenta ?? producto.precioCompetencia,
     cantidadVendida: numeroNoNegativo(cantidades[producto.id], { entero: true }) ?? producto.cantidadVendida,
   }))
 

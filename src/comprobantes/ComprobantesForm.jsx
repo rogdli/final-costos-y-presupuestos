@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import Card from '../shared/ui/Card'
 import Table from '../shared/ui/Table'
 import Button from '../shared/ui/Button'
@@ -29,9 +29,30 @@ const TONO_TIPO = {
   [TIPO.GASTO_ADM]: 'linen',
 }
 
-export default function ComprobantesForm({ comprobantes, productos, control, onAgregar, onEliminar }) {
+export default function ComprobantesForm({ comprobantes, productos, control, onAgregar, onEditar, onEliminar }) {
   const [form, setForm] = useState(vacio)
   const [errores, setErrores] = useState({})
+  const [editandoNumero, setEditandoNumero] = useState(null)
+  const formularioRef = useRef(null)
+
+  function editar(comprobante) {
+    setEditandoNumero(comprobante.numero)
+    setForm({
+      concepto: comprobante.concepto,
+      importe: String(comprobante.importe),
+      tipoFuncional: comprobante.tipoFuncional,
+      comportamiento: comprobante.comportamiento,
+      productoId: comprobante.productoId ?? '',
+    })
+    setErrores({})
+    formularioRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+  }
+
+  function cancelarEdicion() {
+    setEditandoNumero(null)
+    setForm(vacio)
+    setErrores({})
+  }
 
   function cambiarCampo(campo, valor) {
     if (campo === 'importe' && valor !== '' && Number(valor) < 0) {
@@ -48,7 +69,9 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
 
   function handleSubmit(e) {
     e.preventDefault()
-    const nuevosErrores = {}
+    const nuevosErrores = Object.fromEntries(
+      Object.entries(errores).filter(([, mensaje]) => mensaje === 'No puede ser negativo.')
+    )
     if (!form.concepto.trim()) nuevosErrores.concepto = 'Escribí qué gasto o compra estás cargando.'
     if (form.importe === '') nuevosErrores.importe = 'Completá el importe.'
     else if (numeroNoNegativo(form.importe, { positivo: true }) === null) {
@@ -62,16 +85,17 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
     setErrores(nuevosErrores)
     if (Object.keys(nuevosErrores).length > 0) return
 
-    onAgregar({
-      numero: Math.max(0, ...comprobantes.map((c) => c.numero)) + 1,
+    const comprobante = {
+      numero: editandoNumero ?? Math.max(0, ...comprobantes.map((c) => c.numero)) + 1,
       concepto: form.concepto.trim(),
       importe: Number(form.importe),
       tipoFuncional: form.tipoFuncional,
       comportamiento: form.comportamiento,
       productoId: form.productoId || null,
-    })
-    setForm(vacio)
-    setErrores({})
+    }
+    if (editandoNumero !== null) onEditar(comprobante)
+    else onAgregar(comprobante)
+    cancelarEdicion()
   }
 
   function nombreProducto(productoId) {
@@ -93,9 +117,9 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
 
   return (
     <>
-      <Card title="Agregar comprobante" info={ayuda}>
-        {Object.values(errores).some(Boolean) && <p className="ui-form-alert" role="alert">Revisá los campos marcados para agregar el comprobante.</p>}
-        <form className="ui-form-grid ui-form-grid--comprobantes" onSubmit={handleSubmit} noValidate>
+      <Card title={editandoNumero !== null ? 'Editar comprobante' : 'Agregar comprobante'} info={ayuda}>
+        {Object.values(errores).some(Boolean) && <p className="ui-form-alert" role="alert">Revisá los campos marcados para {editandoNumero !== null ? 'guardar' : 'agregar'} el comprobante.</p>}
+        <form ref={formularioRef} className="ui-form-grid ui-form-grid--comprobantes" onSubmit={handleSubmit} noValidate>
           <Field label="Concepto">
             <input
               value={form.concepto}
@@ -160,7 +184,8 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
             {errores.productoId && <span id="comprobante-producto-error" className="ui-field__error">{errores.productoId}</span>}
           </Field>
           <div className="ui-form-grid__submit">
-            <Button type="submit">Agregar comprobante</Button>
+            <Button type="submit">{editandoNumero !== null ? 'Guardar cambios' : 'Agregar comprobante'}</Button>
+            {editandoNumero !== null && <Button type="button" variant="ghost" onClick={cancelarEdicion}>Cancelar</Button>}
           </div>
         </form>
       </Card>
@@ -203,7 +228,17 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
                   <td>
                     <Button
                       variant="ghost"
-                      onClick={() => onEliminar(c.numero)}
+                      onClick={() => editar(c)}
+                      aria-label={`Editar comprobante ${c.numero}`}
+                    >
+                      <Pencil size={14} strokeWidth={1.5} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        if (editandoNumero === c.numero) cancelarEdicion()
+                        onEliminar(c.numero)
+                      }}
                       aria-label={`Eliminar comprobante ${c.numero}`}
                     >
                       <Trash2 size={14} strokeWidth={1.5} />
