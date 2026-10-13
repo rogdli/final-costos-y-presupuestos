@@ -259,7 +259,9 @@ export default function Simulador({
         </p>
 
         <Divider />
-        <SectionHeading>Costos y utilidad</SectionHeading>
+        <SectionHeading info="En las barras de costos, 100% deja el valor actual, 90% lo baja un 10% y 110% lo sube un 10%. Al cambiar cantidades, los costos variables asociados a productos acompañan ese volumen; los variables generales se ajustan con el driver elegido. Si el driver son horas, se estiman según las horas por unidad del caso base. Los datos base no se modifican.">
+          Costos y utilidad
+        </SectionHeading>
 
         <div className="ui-form-grid">
           <Field label="Costos variables (% del valor base)">
@@ -299,13 +301,6 @@ export default function Simulador({
             {errorUtilidad && <span className="ui-field__error" role="alert">{errorUtilidad}</span>}
           </Field>
         </div>
-
-        <p className="ui-hint">
-          En las barras de costos, 100% deja el valor actual, 90% lo baja un 10% y 110% lo sube un 10%. Al cambiar
-          cantidades, los costos variables asociados
-          a productos acompañan ese volumen; los variables generales se ajustan con el driver elegido. Si el driver son
-          horas, se estiman según las horas por unidad del caso base. Los datos base no se modifican.
-        </p>
       </Card>
 
       <Card title="Punto de equilibrio del escenario, por producto">

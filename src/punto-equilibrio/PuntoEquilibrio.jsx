@@ -18,7 +18,13 @@ export default function PuntoEquilibrio({
   const tonoResultado = puntoEquilibrio.cubreCostosFijos ? 'espresso' : 'terracotta'
 
   return (
-    <Card>
+    <Card
+      info={
+        puntoEquilibrio.alcanzable
+          ? `Con esta estructura de costos y estos precios hay que facturar ${formatMoney(puntoEquilibrio.peEnPesos)} en el mes para salir hecho. Hoy se facturan ${formatMoney(ingresosTotales)}.`
+          : 'No hay nivel de ventas que cubra los costos fijos: el margen de contribución es cero o negativo, así que vender más agranda la pérdida. Hay que subir precios o bajar el costo variable.'
+      }
+    >
       <div className="ui-metric-row">
         <MetricTile label="Ingreso total" value={formatMoney(ingresosTotales)} />
         <MetricTile label="Costo variable total" value={formatMoney(costoVariableTotal)} />
@@ -37,22 +43,10 @@ export default function PuntoEquilibrio({
         />
       </div>
 
-      <p className="ui-hint">
-        {puntoEquilibrio.alcanzable ? (
-          <>
-            Con esta estructura de costos y estos precios hay que facturar {formatMoney(puntoEquilibrio.peEnPesos)} en el
-            mes para salir hecho. Hoy se facturan {formatMoney(ingresosTotales)}.
-          </>
-        ) : (
-          <>
-            No hay nivel de ventas que cubra los costos fijos: el margen de contribución es cero o negativo, así que
-            vender más agranda la pérdida. Hay que subir precios o bajar el costo variable.
-          </>
-        )}
-      </p>
-
       <Divider />
-      <SectionHeading>Punto de equilibrio por producto, según el mix de ventas</SectionHeading>
+      <SectionHeading info="La apertura por producto depende del mix: si cambia la proporción de lo que se vende, cambia cuánto tiene que facturar cada uno.">
+        Punto de equilibrio por producto, según el mix de ventas
+      </SectionHeading>
 
       <Table>
         <thead>
@@ -92,11 +86,6 @@ export default function PuntoEquilibrio({
           </tr>
         </tfoot>
       </Table>
-
-      <p className="ui-hint">
-        La apertura por producto depende del mix: si cambia la proporción de lo que se vende, cambia cuánto tiene que
-        facturar cada uno.
-      </p>
 
       <Divider />
 

@@ -12,6 +12,8 @@ import {
   Download,
   Upload,
   TriangleAlert,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import './App.css'
 import { seedProductos, seedComprobantes, seedUtilidadObjetivo } from './shared/seedData'
@@ -95,6 +97,16 @@ const ESTADO_INICIAL = { precios: {}, cantidades: {}, ajusteVariables: 0, ajuste
 const estadoGuardado = cargarEstado()
 const overridesGuardados = estadoGuardado?.overrides
 
+const MENU_PLEGADO_KEY = 'costos-rotiseria:menu-plegado'
+
+function cargarMenuPlegado() {
+  try {
+    return localStorage.getItem(MENU_PLEGADO_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export default function App() {
   const [productos, setProductos] = useState(estadoGuardado?.productos ?? seedProductos)
   const [comprobantes, setComprobantes] = useState(estadoGuardado?.comprobantes ?? seedComprobantes)
@@ -108,6 +120,13 @@ export default function App() {
   })
   const [seccion, setSeccion] = useState(SECCIONES[0].id)
   const [errorImportacion, setErrorImportacion] = useState(estadoGuardado?.avisoDatosCorregidos ?? '')
+  const [menuPlegado, setMenuPlegado] = useState(cargarMenuPlegado)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MENU_PLEGADO_KEY, menuPlegado ? '1' : '0')
+    } catch {}
+  }, [menuPlegado])
 
   useEffect(() => {
     guardarEstado({ productos, comprobantes, metodoCif, utilidadObjetivo, overrides })
@@ -203,14 +222,31 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
-        <p className="app-sidebar__brand">Costos Rotisería</p>
+      <aside className={`app-sidebar ${menuPlegado ? 'app-sidebar--plegado' : ''}`}>
+        <div className="app-sidebar__header">
+          <p className="app-sidebar__brand">Costos Rotisería</p>
+          <button
+            className="app-sidebar__toggle"
+            onClick={() => setMenuPlegado((plegado) => !plegado)}
+            aria-label={menuPlegado ? 'Desplegar menú' : 'Plegar menú'}
+            aria-expanded={!menuPlegado}
+            title={menuPlegado ? 'Desplegar menú' : 'Plegar menú'}
+          >
+            {menuPlegado ? (
+              <PanelLeftOpen size={16} strokeWidth={1.5} />
+            ) : (
+              <PanelLeftClose size={16} strokeWidth={1.5} />
+            )}
+          </button>
+        </div>
         <nav className="app-sidebar__nav">
           {SECCIONES.map(({ id, label, Icon }) => (
             <button
               key={id}
               className={`app-sidebar__item ${seccion === id ? 'app-sidebar__item--active' : ''}`}
               onClick={() => setSeccion(id)}
+              aria-label={label}
+              title={menuPlegado ? label : undefined}
             >
               <Icon size={16} strokeWidth={1.5} />
               <span>{label}</span>

@@ -81,9 +81,19 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
   const esGeneral = !form.productoId
   const tipoRequiereProducto = [TIPO.COSTO_DIRECTO, TIPO.MANO_OBRA_DIRECTA].includes(form.tipoFuncional)
 
+  const ayuda = `${
+    esGeneral && tipoRequiereProducto && productos.length === 0
+      ? 'Primero agregá un producto en la pestaña Productos para cargar un costo directo.'
+      : esGeneral && tipoRequiereProducto
+      ? 'Este tipo de costo es directo: elegí un producto para poder guardarlo. Si corresponde a todos, elegí Mano de obra indirecta, CIF o Gasto Adm. y Venta.'
+      : esGeneral
+      ? 'Sin producto asociado el importe va al pool indirecto y se reparte entre todos los productos según el driver elegido en la pestaña CIF.'
+      : `Con producto asociado el importe se imputa entero a ${nombreProducto(form.productoId)} como costo directo.`
+  } El comportamiento fijo o variable define si suma a los costos fijos de la empresa o al costo variable del producto.`
+
   return (
     <>
-      <Card title="Agregar comprobante">
+      <Card title="Agregar comprobante" info={ayuda}>
         {Object.values(errores).some(Boolean) && <p className="ui-form-alert" role="alert">Revisá los campos marcados para agregar el comprobante.</p>}
         <form className="ui-form-grid ui-form-grid--comprobantes" onSubmit={handleSubmit} noValidate>
           <Field label="Concepto">
@@ -153,18 +163,6 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
             <Button type="submit">Agregar comprobante</Button>
           </div>
         </form>
-
-        <p className="ui-hint">
-          {esGeneral && tipoRequiereProducto && productos.length === 0
-            ? 'Primero agregá un producto en la pestaña Productos para cargar un costo directo.'
-            : esGeneral && tipoRequiereProducto
-            ? 'Este tipo de costo es directo: elegí un producto para poder guardarlo. Si corresponde a todos, elegí Mano de obra indirecta, CIF o Gasto Adm. y Venta.'
-            : esGeneral
-            ? 'Sin producto asociado el importe va al pool indirecto y se reparte entre todos los productos según el driver elegido en la pestaña CIF.'
-            : `Con producto asociado el importe se imputa entero a ${nombreProducto(form.productoId)} como costo directo.`}{' '}
-          El comportamiento fijo o variable define si suma a los costos fijos de la empresa o al costo variable del
-          producto.
-        </p>
       </Card>
 
       <Card title="Comprobantes del período">
