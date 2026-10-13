@@ -146,7 +146,7 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
 
       <Card
         title="Productos del período"
-        info="Al eliminar un producto, sus comprobantes directos no se borran: pasan a General y se reparten como indirectos, para que su importe no desaparezca del cálculo."
+        info="Al eliminar un producto, sus comprobantes no se borran: pasan a General y se reparten como indirectos. Los costos directos pasan a CIF y la mano de obra directa pasa a mano de obra indirecta."
       >
         <Table>
           <thead>
@@ -186,12 +186,6 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
             </tr>
           </tfoot>
         </Table>
-        <Divider />
-        <SectionHeading>Al eliminar un producto</SectionHeading>
-        <p className="ui-hint">
-          Sus comprobantes no se borran: pasan a General y se reparten como indirectos. Los costos directos pasan a CIF
-          y la mano de obra directa pasa a mano de obra indirecta.
-        </p>
       </Card>
     </>
   )
