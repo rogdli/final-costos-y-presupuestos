@@ -150,7 +150,9 @@ export default function Simulador({
 
         <p className="ui-hint">
           Los ajustes de costos se aplican sobre los importes de los comprobantes según su comportamiento: un 10 en
-          costos fijos simula una estructura fija 10% más cara. Los datos base no se modifican.
+          costos fijos simula una estructura fija 10% más cara. Al cambiar cantidades, los costos variables asociados
+          a productos acompañan ese volumen; los variables generales se ajustan con el driver elegido. Si el driver son
+          horas, se estiman según las horas por unidad del caso base. Los datos base no se modifican.
         </p>
       </Card>
 

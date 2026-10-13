@@ -51,6 +51,7 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
   }
 
   const esGeneral = !form.productoId
+  const tipoRequiereProducto = [TIPO.COSTO_DIRECTO, TIPO.MANO_OBRA_DIRECTA].includes(form.tipoFuncional)
 
   return (
     <>
@@ -81,7 +82,11 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
             </select>
           </Field>
           <Field label="Producto asociado">
-            <select value={form.productoId} onChange={(e) => setForm({ ...form, productoId: e.target.value })}>
+            <select
+              value={form.productoId}
+              required={tipoRequiereProducto}
+              onChange={(e) => setForm({ ...form, productoId: e.target.value })}
+            >
               <option value="">General</option>
               {productos.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -96,7 +101,9 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
         </form>
 
         <p className="ui-hint">
-          {esGeneral
+          {esGeneral && tipoRequiereProducto
+            ? 'Este tipo de costo es directo: elegí un producto para poder guardarlo. Si corresponde a todos, elegí Mano de obra indirecta, CIF o Gasto Adm. y Venta.'
+            : esGeneral
             ? 'Sin producto asociado el importe va al pool indirecto y se reparte entre todos los productos según el driver elegido en la pestaña CIF.'
             : `Con producto asociado el importe se imputa entero a ${nombreProducto(form.productoId)} como costo directo.`}{' '}
           El comportamiento fijo o variable define si suma a los costos fijos de la empresa o al costo variable del
