@@ -53,9 +53,17 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
   const esGeneral = !form.productoId
   const tipoRequiereProducto = [TIPO.COSTO_DIRECTO, TIPO.MANO_OBRA_DIRECTA].includes(form.tipoFuncional)
 
+  const ayuda = `${
+    esGeneral && tipoRequiereProducto
+      ? 'Este tipo de costo es directo: elegí un producto para poder guardarlo. Si corresponde a todos, elegí Mano de obra indirecta, CIF o Gasto Adm. y Venta.'
+      : esGeneral
+      ? 'Sin producto asociado el importe va al pool indirecto y se reparte entre todos los productos según el driver elegido en la pestaña CIF.'
+      : `Con producto asociado el importe se imputa entero a ${nombreProducto(form.productoId)} como costo directo.`
+  } El comportamiento fijo o variable define si suma a los costos fijos de la empresa o al costo variable del producto.`
+
   return (
     <>
-      <Card title="Agregar comprobante">
+      <Card title="Agregar comprobante" info={ayuda}>
         <form className="ui-form-grid" onSubmit={handleSubmit}>
           <Field label="Concepto">
             <input value={form.concepto} onChange={(e) => setForm({ ...form, concepto: e.target.value })} />
@@ -99,16 +107,6 @@ export default function ComprobantesForm({ comprobantes, productos, control, onA
             <Button type="submit">Agregar comprobante</Button>
           </div>
         </form>
-
-        <p className="ui-hint">
-          {esGeneral && tipoRequiereProducto
-            ? 'Este tipo de costo es directo: elegí un producto para poder guardarlo. Si corresponde a todos, elegí Mano de obra indirecta, CIF o Gasto Adm. y Venta.'
-            : esGeneral
-            ? 'Sin producto asociado el importe va al pool indirecto y se reparte entre todos los productos según el driver elegido en la pestaña CIF.'
-            : `Con producto asociado el importe se imputa entero a ${nombreProducto(form.productoId)} como costo directo.`}{' '}
-          El comportamiento fijo o variable define si suma a los costos fijos de la empresa o al costo variable del
-          producto.
-        </p>
       </Card>
 
       <Card title="Comprobantes del período">

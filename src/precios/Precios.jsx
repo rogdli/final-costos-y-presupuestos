@@ -7,7 +7,7 @@ import { formatMoney } from '../shared/format'
 
 export default function Precios({ productos, margen, preciosSugeridos, utilidadObjetivo }) {
   return (
-    <Card>
+    <Card info="El precio mínimo cubre el costo variable del producto más su parte de la estructura fija. El precio sugerido agrega la utilidad objetivo del mes. Si el precio de la competencia está por debajo del mínimo, con ese precio el producto no alcanza a cubrir los fijos.">
       <div className="ui-metric-row">
         <MetricTile
           label="Contribución mínima unitaria"
@@ -16,12 +16,6 @@ export default function Precios({ productos, margen, preciosSugeridos, utilidadO
         <MetricTile label="Contribución deseada unitaria" value={formatMoney(preciosSugeridos.contribucionDeseada)} />
         <MetricTile label="Utilidad mensual objetivo" value={formatMoney(utilidadObjetivo)} />
       </div>
-
-      <p className="ui-hint">
-        El precio mínimo cubre el costo variable del producto más su parte de la estructura fija. El precio sugerido
-        agrega la utilidad objetivo del mes. Si el precio de la competencia está por debajo del mínimo, con ese precio el
-        producto no alcanza a cubrir los fijos.
-      </p>
 
       <Divider />
 

@@ -4,8 +4,6 @@ import Card from '../shared/ui/Card'
 import Table from '../shared/ui/Table'
 import Button from '../shared/ui/Button'
 import Field from '../shared/ui/Field'
-import SectionHeading from '../shared/ui/SectionHeading'
-import Divider from '../shared/ui/Divider'
 import { formatMoney, formatNumber } from '../shared/format'
 
 const vacio = { nombre: '', cantidadVendida: '', horasProduccion: '', precioCompetencia: '' }
@@ -51,7 +49,10 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
 
   return (
     <>
-      <Card title="Agregar producto">
+      <Card
+        title="Agregar producto"
+        info="Las unidades vendidas y las horas de producción son los dos drivers con los que se reparten los costos indirectos. Si están en cero, el pool indirecto no se puede repartir."
+      >
         <form className="ui-form-grid" onSubmit={handleSubmit}>
           <Field label="Nombre">
             <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
@@ -81,14 +82,12 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
             <Button type="submit">Agregar producto</Button>
           </div>
         </form>
-
-        <p className="ui-hint">
-          Las unidades vendidas y las horas de producción son los dos drivers con los que se reparten los costos
-          indirectos. Si están en cero, el pool indirecto no se puede repartir.
-        </p>
       </Card>
 
-      <Card title="Productos del período">
+      <Card
+        title="Productos del período"
+        info="Al eliminar un producto, sus comprobantes directos no se borran: pasan a General y se reparten como indirectos, para que su importe no desaparezca del cálculo."
+      >
         <Table>
           <thead>
             <tr>
@@ -127,13 +126,6 @@ export default function ProductosForm({ productos, comprobantes, onAgregar, onEl
             </tr>
           </tfoot>
         </Table>
-
-        <Divider />
-        <SectionHeading>Al eliminar un producto</SectionHeading>
-        <p className="ui-hint">
-          Sus comprobantes directos no se borran: pasan a General y se reparten como indirectos, para que su importe no
-          desaparezca del cálculo.
-        </p>
       </Card>
     </>
   )
